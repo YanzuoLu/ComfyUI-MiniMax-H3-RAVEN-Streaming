@@ -213,7 +213,8 @@ ComfyUI-MiniMax-H3-RAVEN-Streaming/
 │   ├── raven_streaming_preview.js
 │   ├── preview.css
 │   └── lib/{controller,mse,sequencer,protocol,states,identity,ui}.js
-├── workflows/                # importable UI workflow + API prompt
+├── example_workflows/        # UI workflow + thumbnail; scanned by ComfyUI as a template
+├── api_workflows/            # API prompt; deliberately outside the template scan
 ├── tools/                    # probes and harnesses (not shipped)
 ├── tests/                    # pure unit/contract tests (not shipped)
 └── docs/
@@ -460,7 +461,7 @@ memory; ordering is one rule; cancellation is observed, never caused.
 | **M2** | Causal parity: chunk-major fresh-noise consistency sampling with `sink`/`window` reproduces the reference, all 50 blocks. | **done**, `validation.md` §M2 |
 | **M3** | Sampler + AV outputs: per-chunk video decode (5+2, 5-frame overlap) and audio overlap-save feeding the two collectors, correct `LATENT` / `IMAGE` / `AUDIO`, no whole-clip decode. | **done**, `validation.md` §Integration (1376x768 / 192 frames on a 24 GiB envelope, 86/86) |
 | **M4** | WebSocket + MSE delivery: fMP4 over the ComfyUI websocket, one-chunk startup delay, 17-frame cadence, tail flush observed end to end. | **done**, `validation.md` §Integration (251 fragments, 216 before `finish()`) |
-| **M5** | Release preparation: docs carrying measured behaviour, `.comfyignore` verified against a package dry run, manual Comfy Registry publish under `yanzuolu` only after approval. | **source repository published.** `main` is public at `YanzuoLu/ComfyUI-MiniMax-H3-RAVEN-Streaming`; metadata validates; `comfy node pack` produced a 44-file archive whose allow/exclusion audit passed (`validation.md` §Packaging). **Still intentionally undone:** tag, GitHub Release and Comfy Registry publish. |
+| **M5** | Release preparation: docs carrying measured behaviour, `.comfyignore` verified against a package dry run, manual Comfy Registry publish under `yanzuolu` only after approval. | **source repository published.** `main` is public at `YanzuoLu/ComfyUI-MiniMax-H3-RAVEN-Streaming`; metadata validates; `comfy node pack` produced a 45-file archive whose allow/exclusion audit passed (`validation.md` §Packaging). **Still intentionally undone:** tag, GitHub Release and Comfy Registry publish. |
 
 Every milestone that makes a claim ("passes", "matches", "verified") lands with
 the evidence that supports it; until then `validation.md` says `pending`.

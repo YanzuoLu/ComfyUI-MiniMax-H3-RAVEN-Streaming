@@ -1,5 +1,17 @@
 # Files excluded from the Comfy Registry package.
 # gitignore syntax. Keep the runtime package (raven_streaming/) and web/ assets.
+#
+# Deliberately NOT excluded, and both must stay in the archive:
+#   example_workflows/  -- the UI workflow template + its thumbnail. ComfyUI
+#                          globs <custom_node>/example_workflows/*.json and
+#                          publishes each one under Workflow -> Browse
+#                          Templates -> Extensions.
+#   api_workflows/      -- the API prompt. Outside the template scan on purpose
+#                          (`workflow`/`workflows`/`example`/`examples` are the
+#                          other scanned aliases), since an API prompt offered
+#                          as a template opens as a broken graph.
+# The `examples/` line below is a directory named exactly `examples` and does
+# NOT match `example_workflows/`.
 
 # Development-only trees
 tests/

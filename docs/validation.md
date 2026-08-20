@@ -342,8 +342,8 @@ entry exists. The checks below validate the package without publishing it.
 | `comfy node validate` | **"All validation checks passed successfully"** (configuration + security checks) | `comfy-cli 1.16.0` installed into an isolated, project-local `.cache/registry-venv`, run as `.cache/registry-venv/bin/comfy --json node validate` |
 | Upstream's own parser | **passes** | the real `comfy_config.config_parser.extract_node_configuration('.')` from the pinned ComfyUI checkout — not a re-implementation |
 | Parsed metadata | `publisher_id = yanzuolu`, `supported_comfyui_version = >=0.30.0`, `supported_os = ['OS Independent']`, `supported_accelerators = ['GPU :: NVIDIA CUDA']`, **`web = None`** | same call |
-| `comfy node pack` | **passed**: 44 files, 875 583 uncompressed bytes; ZIP SHA256 `e6217a0a25c6ecdc2dec18043f691e2789343f6aa9245839bf7c80c316215f0c` | packed from public `main` after the live ComfyUI entrypoint fix, then moved to `.cache/registry-pack/comfyui-minimax-h3-raven-streaming-0.1.0.zip` |
-| Archive contents | required runtime, `web/`, workflows, README/LICENSE/NOTICE/metadata present; **no** `tests/`, `tools/`, `docs/`, `.cache/`, model or IO trees | `unzip -Z1` allow/exclusion audit; full listing in `.cache/final_pack_listing.txt` |
+| `comfy node pack` | **passed**: 45 files, 936 821 uncompressed bytes; ZIP SHA256 `5537989ae4ee95f70c986fbd088ccc7b8fd2cd2403a7b51d99cc21795b7febb0` | packed with the custom-node template JSON/JPG and separate API prompt, then moved to `.cache/registry-pack/comfyui-minimax-h3-raven-streaming-0.1.0.zip` |
+| Archive contents | required runtime, `web/`, `example_workflows/`, `api_workflows/`, README/LICENSE/NOTICE/metadata present; **no** `tests/`, `tools/`, `docs/`, `.cache/`, model or IO trees | `unzip -Z1` allow/exclusion audit; full listing in `.cache/final_pack_listing.txt` |
 
 `web = None` is the intended value, not an omission: `WEB_DIRECTORY = "./web"`
 lives in the repository root `__init__.py`, and setting `[tool.comfy] web` as

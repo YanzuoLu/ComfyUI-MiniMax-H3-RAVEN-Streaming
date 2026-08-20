@@ -5,8 +5,8 @@ built on top of ComfyUI's *official* H3 implementation and a **mandatory RAVEN
 LoRA**.
 
 > **Status: implemented, locally validated, source published.** The nodes, the
-> chunk-major sampler, the streaming preview and the workflows in `workflows/`
-> run end to end on real weights: 1376x768 / 192 frames inside a simulated
+> chunk-major sampler, the streaming preview and the example workflow in
+> `example_workflows/` run end to end on real weights: 1376x768 / 192 frames inside a simulated
 > 24 GiB VRAM envelope, the 362-frame maximum, the real Qwen3-VL text lane, a
 > public third-party H3 LoRA through the official `LoraLoaderModelOnly`, and
 > CPU-pinned/GPU KV modes with bitwise-identical `LATENT` / `IMAGE` / `AUDIO`.
@@ -44,6 +44,18 @@ git pull --ff-only
 Then restart ComfyUI. The nodes register through the repository root
 `__init__.py` (V1 mappings plus `WEB_DIRECTORY`), so no extra step is needed to
 get the in-node preview widget.
+
+After that restart the example graph is available from the frontend itself:
+**Workflow -> Browse Templates -> Extensions**, then either pick this pack by
+its folder / module name (`ComfyUI-MiniMax-H3-RAVEN-Streaming`) or type
+`minimax_h3_raven_streaming_t2va` into the template search box — the template
+title *is* the file name in `example_workflows/`. Clicking it opens the same
+graph described in [The workflow](#the-workflow), ready to run once the model
+files are in place.
+
+The manual route still works and needs no restart: drag
+[`example_workflows/minimax_h3_raven_streaming_t2va.json`](example_workflows/minimax_h3_raven_streaming_t2va.json)
+onto the canvas, or use *Workflow -> Open*.
 
 ### Requirements
 
@@ -151,15 +163,24 @@ VAELoader (audio VAE) ───────────────────�
                                                  └─> AUDIO  -> SaveAudio / CreateVideo
 ```
 
-Ready-made graphs live in [`workflows/`](workflows/):
+Ready-made graphs, one per format:
 
-- `workflows/raven_t2va_streaming.json` — a **UI workflow**: drag it onto the
-  ComfyUI canvas (or *Workflow -> Open*) and it loads as a graph you can edit.
-- `workflows/raven_t2va_streaming_api.json` — the same graph in **API prompt**
-  format, for `POST /prompt`. This one does **not** open in the UI.
+- [`example_workflows/minimax_h3_raven_streaming_t2va.json`](example_workflows/minimax_h3_raven_streaming_t2va.json)
+  — the **UI workflow**. ComfyUI scans `example_workflows/` and publishes every
+  `.json` in it as a template, so this one also shows up under *Workflow ->
+  Browse Templates -> Extensions* as `minimax_h3_raven_streaming_t2va`. Drag it
+  onto the canvas or use *Workflow -> Open* to get the same graph without going
+  through the template browser.
+- [`api_workflows/raven_t2va_streaming_api.json`](api_workflows/raven_t2va_streaming_api.json)
+  — the same graph in **API prompt** format, for `POST /prompt`. This one does
+  **not** open in the UI, which is exactly why it lives outside
+  `example_workflows/`: anything dropped in there is offered as a template, and
+  an API prompt loaded as a template is a broken graph.
 
 Both reference the public filenames listed above; if your files are named
-differently, re-pick them in the combo widgets.
+differently, re-pick them in the combo widgets. See
+[`example_workflows/README.md`](example_workflows/README.md) for the wiring
+notes.
 
 ### 1. `RAVEN Model Loader`
 
@@ -291,7 +312,7 @@ preview encodes are the same frames the `IMAGE` buffer holds.
 
 ### Saving
 
-The workflows in `workflows/` end in the official `SaveAnimatedWEBP` (video,
+The example graphs end in the official `SaveAnimatedWEBP` (video,
 24 fps) and `SaveAudio` (FLAC), because those two take `IMAGE` and `AUDIO`
 directly and carry only plain widgets. Note that upstream marks `SaveAudio`
 **deprecated** at the pinned baseline — it still loads and still writes FLAC;
@@ -460,5 +481,6 @@ without FlashAttention runs without any configuration. `FLASH_ATTN_3_AVAILABLE=0
 - [`NOTICE`](https://github.com/YanzuoLu/ComfyUI-MiniMax-H3-RAVEN-Streaming/blob/main/NOTICE) — third-party attribution.
 
 The documentation links are absolute so they remain valid when the Registry
-archive omits `docs/` and `COMPATIBILITY.md` via `.comfyignore`. `workflows/`,
-`web/`, `LICENSE` and `NOTICE` ship with the package.
+archive omits `docs/` and `COMPATIBILITY.md` via `.comfyignore`.
+`example_workflows/`, `api_workflows/`, `web/`, `LICENSE` and `NOTICE` ship with
+the package.

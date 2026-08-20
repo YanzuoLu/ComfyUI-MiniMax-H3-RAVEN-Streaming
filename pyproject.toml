@@ -41,7 +41,10 @@ DisplayName = "MiniMax H3 RAVEN Streaming"
 # The feature probe in COMPATIBILITY.md decides at runtime, not this string.
 requires-comfyui = ">=0.30.0"
 # Nothing extra is pulled into the published archive; .comfyignore decides what
-# is left out (tests/, tools/, docs/, .cache/, ...).
+# is left out (tests/, tools/, docs/, .cache/, ...). example_workflows/ (the UI
+# template + thumbnail that ComfyUI lists under Workflow -> Browse Templates ->
+# Extensions) and api_workflows/ (the API prompt, kept out of that scan on
+# purpose) are tracked files and ship without needing an entry here.
 includes = []
 
 # `web` is deliberately NOT set here.
@@ -76,8 +79,9 @@ includes = []
 # Checks actually run against this file, with recorded results:
 #
 #   git ls-files --others --exclude-from=.comfyignore --exclude-standard
-#     -- what the archive would contain; 44 entries, runtime package + web/ +
-#        workflows/ + README/LICENSE/NOTICE, no tests/tools/docs/.cache
+#     -- what the archive would contain; 45 entries, runtime package + web/ +
+#        example_workflows/ + api_workflows/ + README/LICENSE/NOTICE, no
+#        tests/tools/docs/.cache
 #
 #   PYTHONPATH=.cache/upstream/ComfyUI python -c \
 #     "from comfy_config import config_parser; \
@@ -93,7 +97,8 @@ includes = []
 #     -- "All validation checks passed successfully", exit 0.
 #
 #   comfy node pack
-#     -- 44-file local archive; forbidden-content audit passed.
+#     -- 45-file local archive; custom template JSON/JPG included and
+#        forbidden-content audit passed.
 #
 # `comfy node publish` creates the Registry entry. It has not been run.
 # ---------------------------------------------------------------------------
