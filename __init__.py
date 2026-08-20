@@ -4,21 +4,20 @@ from __future__ import annotations
 
 import logging
 import sys
+from pathlib import Path
 
-# ComfyUI loads a custom-node directory under a generated package name. Because
-# this repository name contains hyphens, the bundled runtime is initially known
-# only as ``<generated-name>.raven_streaming``. Its modules intentionally use
-# the stable public name ``raven_streaming`` internally, so publish that alias
-# before importing ``nodes``. A normal Python/package installation already has
-# the top-level name and takes the fallback branch.
-try:
-    from . import raven_streaming as _runtime
-except (ImportError, ValueError):  # plain ``__init__.py`` import, no package parent
-    import raven_streaming as _runtime
-else:
-    sys.modules.setdefault("raven_streaming", _runtime)
+# ComfyUI executes a custom-node root under a generated package name. The
+# repository directory contains hyphens, so it cannot be the stable import name
+# used by the runtime's absolute imports. Put this directory on ``sys.path`` and
+# import exactly one top-level ``raven_streaming`` package. Aliasing a relative
+# package object is not equivalent: its ``__spec__.name`` keeps the generated
+# name and can make Python load submodules twice, producing distinct class
+# identities from the same source file.
+_PLUGIN_ROOT = str(Path(__file__).resolve().parent)
+if _PLUGIN_ROOT not in sys.path:
+    sys.path.insert(0, _PLUGIN_ROOT)
 
-install_preview = _runtime.install_preview
+from raven_streaming import install_preview
 from raven_streaming.nodes import NODE_CLASS_MAPPINGS, NODE_DISPLAY_NAME_MAPPINGS
 
 WEB_DIRECTORY = "./web"
