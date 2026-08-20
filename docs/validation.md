@@ -338,16 +338,20 @@ with `over_reference: false`. The `detail` dict carries every term, the joint
 offload plan for both phases, and the measured device facts, so the comparison
 can be redone term by term from the artifact.
 
-## Packaging — Registry dry run
+## Packaging — Comfy Registry publication
 
-The source repository is public, but no tag, GitHub Release or Comfy Registry
-entry exists. The checks below validate the package without publishing it.
+The source repository is public and the `0.1.0` package is published on the
+Comfy Registry under publisher `oliveryanzuolu`. No tag or GitHub Release is
+created by the Registry publish flow. The checks below validate the package and
+the published entry.
 
 | Check | Result | How |
 |---|---|---|
 | `comfy node validate` | **"All validation checks passed successfully"** (configuration + security checks) | `comfy-cli 1.16.0` installed into an isolated, project-local `.cache/registry-venv`, run as `.cache/registry-venv/bin/comfy --json node validate` |
 | Upstream's own parser | **passes** | the real `comfy_config.config_parser.extract_node_configuration('.')` from the pinned ComfyUI checkout — not a re-implementation |
 | Parsed metadata | `publisher_id = oliveryanzuolu`, `supported_comfyui_version = >=0.30.0`, `supported_os = ['OS Independent']`, `supported_accelerators = ['GPU :: NVIDIA CUDA']`, **`web = None`** | same call |
+| `comfy node publish` | **passed**: upload successful | run manually with the publisher token, from commit `37cc6bfe9b729f52ed9b7c868a01c51a834e446a` |
+| Registry API | **active**: `NodeStatusActive`, package `comfyui-minimax-h3-raven-streaming`, publisher `oliveryanzuolu`, repository URL present | `https://api.comfy.org/nodes/comfyui-minimax-h3-raven-streaming` after publish |
 | `comfy node pack` | **passed**: 45 files | packed with the custom-node template JSON/JPG and separate API prompt, then moved to `.cache/registry-pack/comfyui-minimax-h3-raven-streaming-0.1.0.zip` |
 | Archive contents | required runtime, `web/`, `example_workflows/`, `api_workflows/`, README/LICENSE/NOTICE/metadata present; **no** `tests/`, `tools/`, `docs/`, `.cache/`, model or IO trees | `unzip -Z1` allow/exclusion audit; full listing in `.cache/final_pack_listing.txt` |
 
@@ -357,8 +361,8 @@ well would make upstream register the folder twice under two keys and load every
 file in it twice (`web/PROTOCOL.md` §6.1).
 
 The venv and packed ZIP are deliberately inside gitignored `.cache/`, so neither
-contaminates the runtime environment or git history. `pack` is a local dry run:
-it creates no tag, release or Registry entry.
+contaminates the runtime environment or git history. Registry publication is
+manual: there is no publish workflow, tag creation or GitHub Release automation.
 
 ## Optional paths, explicitly unverified
 

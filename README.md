@@ -4,7 +4,7 @@ Streaming **text-to-video-and-audio (T2VA)** custom nodes for **MiniMax H3**,
 built on top of ComfyUI's *official* H3 implementation and a **mandatory RAVEN
 LoRA**.
 
-> **Status: implemented, locally validated, source published.** The nodes, the
+> **Status: implemented, locally validated, source and Comfy Registry package published.** The nodes, the
 > chunk-major sampler, the streaming preview and the example workflow in
 > `example_workflows/` run end to end on real weights: 1376x768 / 192 frames inside a simulated
 > 24 GiB VRAM envelope, the 362-frame maximum, the real Qwen3-VL text lane, a
@@ -13,7 +13,9 @@ LoRA**.
 > A delivered-chunk cancellation followed by three normal runs also leaves no
 > buffered media and produces bitwise-identical outputs with zero CUDA plateau
 > growth. Every measurement is listed in [`docs/validation.md`](docs/validation.md).
-> The source repository is public; there is no Comfy Registry release yet.
+> The package is published on the Comfy Registry as
+> [`comfyui-minimax-h3-raven-streaming`](https://registry.comfy.org/nodes/comfyui-minimax-h3-raven-streaming)
+> under publisher `oliveryanzuolu`; the source repository is public on GitHub.
 
 - Display name: **MiniMax H3 RAVEN Streaming**
 - Package name: `comfyui-minimax-h3-raven-streaming`
@@ -26,8 +28,27 @@ LoRA**.
 
 ## Installation
 
-The source is public but the package is not yet published to the Comfy Registry.
-Install it directly into ComfyUI's `custom_nodes` directory:
+### Comfy Registry (recommended)
+
+The published package is active on the Comfy Registry:
+
+<https://registry.comfy.org/nodes/comfyui-minimax-h3-raven-streaming>
+
+Install it with ComfyUI-Manager by searching for **MiniMax H3 RAVEN Streaming**
+or `comfyui-minimax-h3-raven-streaming`, then restart ComfyUI. You can also
+install it from a checkout of ComfyUI with the CLI:
+
+```bash
+cd ComfyUI
+comfy node install comfyui-minimax-h3-raven-streaming
+```
+
+The package has no model downloads. After installation, put the model files in
+the standard folders listed in [Models](#models) and restart ComfyUI.
+
+### Manual from GitHub
+
+Install the source checkout directly into ComfyUI's `custom_nodes` directory:
 
 ```bash
 cd ComfyUI/custom_nodes
