@@ -21,11 +21,20 @@ here.
 
 ## 2. Functional requirements
 
-### R1 — T2VA only
-Text prompt in, joint video + audio out. The official H3 image-conditioned modes
-(first/last keyframe `fl2va`, reference `ref2va`) are **not** exposed in 0.1.x.
+### R1 — T2VA is the delivered and validated path
+Text prompt in, joint video + audio out. The bundled template and every run in
+`validation.md` are T2VA, and that is the only path 0.1.x claims to deliver.
 The official `MiniMaxH3ImageToVideo` node is reused in its T2VA form, i.e. with
 no `first_frame` / `last_frame` inputs connected.
+
+The streaming sampler **rejects** conditioning carrying `minimax_keyframes`
+(`fl2va`) or `minimax_refs` (`ref2va`) because it has **not implemented or
+verified the causal packed layout for condition/reference rows**; refusing is
+preferred to silently ignoring them. This is a limit of the sampler's runtime
+implementation, **not** a statement that the RAVEN LoRA is text-only. The loader
+returns a standard `MODEL`, so other official H3 workflows can be explored with
+it — outside this sampler, unverified, with no compatibility, quality or
+reproducibility guarantee.
 
 ### R2 — Built on ComfyUI's official H3
 The model, VAEs, text encoder, conditioning and latent formats come from
@@ -148,8 +157,8 @@ No real-time guarantee, no fixed frames-per-second target, no latency budget.
 
 ### N3 — Models are external
 No weights are distributed here. Model licenses are independent of this
-repository's MIT license. Files, folders, URLs and SHA256 checksums are listed
-in `README.md`.
+repository's MIT license. Required filenames, folders and download URLs are
+listed in `README.md`.
 
 ### N4 — Compatibility policy
 Audited against ComfyUI `0.33.0` at commit
@@ -165,7 +174,11 @@ Until a milestone is actually validated, documentation says so. No claims of
 ## 4. Explicit non-goals
 
 - Real-time playback / latency guarantees.
-- Image-conditioned or reference-conditioned generation.
+- Image-conditioned or reference-conditioned generation **through this
+  streaming sampler**: the condition-row layout is not implemented, so such
+  conditioning is refused rather than ignored. Exploring those modes with the
+  loader's standard `MODEL` in other official H3 workflows is neither blocked
+  nor supported here.
 - Multi-GPU, and any guaranteed low-VRAM strategy beyond the Comfy native
   partial CPU offload described in N1.
 - `k = 0` (5-frame / 2-latent) generation.

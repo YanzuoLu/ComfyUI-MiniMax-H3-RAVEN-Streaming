@@ -111,13 +111,11 @@ ComfyUI/models/
 **RAVEN streaming LoRA (mandatory, public)** -> `models/loras/minimax_h3_raven_streaming_lora_4nfe_preview.safetensors`
 
 - <https://huggingface.co/mvp-lab/MiniMax-H3-RAVEN-Streaming-LoRA/resolve/main/minimax_h3_raven_streaming_lora_4nfe_preview.safetensors>
-- SHA256 `99de2e6b1ff69c49c3ca4b1126e5679409037fd2ccd0442b8323dc310d328f30`
 - 266 LoRA modules, rank 128, alpha 128, ~5 GB of FP32 A/B tensors.
 
 **H3 DiT (official Comfy-Org repackage)** -> `models/diffusion_models/minimax_h3_fl2va_bf16.safetensors`
 
 - <https://huggingface.co/Comfy-Org/MiniMax-H3/resolve/main/diffusion_models/minimax_h3_fl2va_bf16.safetensors>
-- SHA256 `907d4add438438ec1544f5240c3b38532ed934fe6be75677a6bbda2a6fdd6182`
 - This is the **full, non-pruned BF16** checkpoint. The pruned / adaln-curve
   variant is rejected by the loader: it has no `time_embedder` for the RAVEN
   adapter's 266-module mapping to attach to.
@@ -125,17 +123,14 @@ ComfyUI/models/
 **Text encoder** -> `models/text_encoders/qwen3vl_32b_minimax_h3_nvfp4_awq.safetensors`
 
 - <https://huggingface.co/Comfy-Org/MiniMax-H3/resolve/main/text_encoders/qwen3vl_32b_minimax_h3_nvfp4_awq.safetensors>
-- SHA256 `35a88d51044231fe332301d7a62aa81e3f2cba62febeb446e2c1e3e0ef76f2c6`
 
 **Video VAE** -> `models/vae/minimax_h3_video_vae_fp16.safetensors`
 
 - <https://huggingface.co/Comfy-Org/MiniMax-H3/resolve/main/vae/minimax_h3_video_vae_fp16.safetensors>
-- SHA256 `7c1f131492e7eddacaac9069a61b81bdd39de5cc96561e677c5eab1cdce5e522`
 
 **Audio VAE** -> `models/vae/minimax_h3_audio_vae_fp32.safetensors`
 
 - <https://huggingface.co/Comfy-Org/MiniMax-H3/resolve/main/vae/minimax_h3_audio_vae_fp32.safetensors>
-- SHA256 `8e505d95dd1561d47abd43d4238fd40d9bb1ae9e147ed0a4cba778d76ae4db48`
 
 ---
 
@@ -200,6 +195,14 @@ LoRA and returns a **standard `MODEL`**.
 - The returned `MODEL` is a **stock static `ModelPatcher`**
   (`disable_dynamic=True`), so stock `LoraLoaderModelOnly` chains after it and
   Comfy's own offload accounting applies unchanged.
+- Because it is a standard `MODEL`, you can also wire it into **other official
+  H3 workflows** and experiment there. Nothing in this loader restricts the
+  model to one generation mode. What *is* restricted is the `RAVEN Streaming
+  Sampler` in this pack: it has not implemented the causal packed layout for
+  condition/reference rows, so it refuses conditioning that carries them (see
+  below). That is a limit of this sampler's implementation, not a statement
+  about the RAVEN LoRA. Anything you run outside this sampler is unverified
+  here — no compatibility, quality or reproducibility guarantee is made for it.
 - There is deliberately **no FP8/INT8 `weight_dtype`**: `comfy.ops` fuses
   quantised linears and would silently skip the residual.
 
@@ -254,8 +257,19 @@ Runs the chunk-major RAVEN rollout and produces the final media.
 
 Scope limits that are part of the contract:
 
-- **T2VA only.** The official image-conditioned modes (`fl2va`, `ref2va`) are out
-  of scope for 0.1.x.
+- **The validated path is T2VA.** The bundled template and every run in
+  [`docs/validation.md`](docs/validation.md) are text-to-video-and-audio, and
+  that is the only path this pack claims to have verified.
+- **The sampler refuses condition/reference rows, for implementation reasons.**
+  `minimax_keyframes` (`fl2va`) and `minimax_refs` (`ref2va`) conditioning
+  extras are rejected with an explicit error because the streaming sampler has
+  **not implemented or verified the causal packed layout for condition rows**.
+  Refusing is deliberate: silently dropping them would look like a quality bug.
+  This is a **runtime limit of this sampler**, not a claim that the RAVEN LoRA
+  is text-only. If you want to explore image- or reference-conditioned H3 modes,
+  take the standard `MODEL` from `RAVEN Model Loader` and build your own
+  workflow around the official H3 nodes — untested here, with no compatibility,
+  quality or reproducibility guarantee.
 - **Single GPU only.** No multi-GPU, no model parallel, no distributed sampling.
 - **Full, non-pruned BF16 DiT only.**
 - **No per-chunk reroll.** There is no way to reject chunk *i* and resample it:

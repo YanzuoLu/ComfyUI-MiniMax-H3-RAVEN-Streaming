@@ -60,8 +60,14 @@ Notes on the wiring:
 
 - The **video** VAE goes to two places: the H3 node's `vae` input (required by
   the official schema even in T2VA form) and the sampler's `video_vae`.
-- `first_frame` / `last_frame` stay unconnected. Connecting them is `fl2va`,
-  which is out of scope for 0.1.x.
+- `first_frame` / `last_frame` stay unconnected: **this template is T2VA.**
+  Connecting them makes the H3 node emit `minimax_keyframes` conditioning, and
+  the `RAVEN Streaming Sampler` refuses that with an explicit error — it has not
+  implemented or verified the causal packed layout for condition rows, and
+  silently dropping the input would look like a quality bug. That is a limit of
+  this sampler's implementation, not of the RAVEN LoRA. For other modes, build
+  your own workflow around the loader's standard `MODEL` and the official H3
+  nodes; nothing here is verified for them.
 - Extra LoRAs are stacked with stock `LoraLoaderModelOnly` on the `MODEL` wire,
   between the loader and the sampler. The mandatory RAVEN adapter is already
   inside the `MODEL` at strength 1.0 and is unaffected.

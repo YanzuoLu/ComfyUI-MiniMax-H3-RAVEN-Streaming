@@ -194,7 +194,7 @@ ComfyUI-MiniMax-H3-RAVEN-Streaming/
 │   ├── causal_model.py       # chunk-causal MiniMaxH3Model + attention backends
 │   ├── cache.py              # per-layer chunk KV cache, sink + sliding window
 │   ├── consistency.py        # chunk-major fresh-noise consistency rollout
-│   ├── layout.py             # T2VA packed geometry, 17k+5 grid, chunk table
+│   ├── layout.py             # packed geometry (text+target rows), 17k+5 grid, chunk table
 │   ├── contracts.py          # socket-boundary parsing (CONDITIONING/LATENT/MODEL)
 │   ├── compat.py             # upstream feature detection, no version branching
 │   ├── streaming_pipeline.py # the 2 collectors (= IMAGE/AUDIO) + preview lane

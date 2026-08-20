@@ -14,7 +14,10 @@ Node contract (``docs/architecture.md`` §2), stated once:
   ``height`` / ``frames``: every one of those either does not exist in this
   sampling regime or is already carried by the latent, and offering a second
   place to state it is how a workflow ends up silently generating something
-  other than what its latent says.
+  other than what its latent says. Keyframe / reference conditioning extras are
+  refused because this sampler has not implemented the causal packed layout for
+  condition rows -- a runtime limit of the implementation, not a claim about
+  what the RAVEN LoRA can do.
 
 Import weight
 -------------
@@ -255,7 +258,10 @@ class RAVENModelLoader:
     OUTPUT_TOOLTIPS = (
         "A standard ComfyUI MODEL (stock static ModelPatcher) whose diffusion_model "
         "is the chunk-causal RAVEN DiT. Stock LoraLoaderModelOnly can be chained "
-        "after it.",
+        "after it, and nothing here restricts it to one generation mode - other "
+        "official H3 workflows can be explored with it, unverified and unsupported. "
+        "The RAVEN Streaming Sampler in this pack is the narrower part: it refuses "
+        "conditioning carrying condition/reference rows it has not implemented.",
     )
     FUNCTION = "load_model"
     CATEGORY = "model/loaders/raven"
@@ -2396,7 +2402,12 @@ class RAVENStreamingSampler:
                         "tooltip": "The positive CONDITIONING from MiniMax H3 Image to "
                         "Video used in T2VA form. There is no negative input and no "
                         "CFG: the chunk-major loop runs one conditioning branch, so a "
-                        "second one would be silently ignored."
+                        "second one would be silently ignored. Keyframe (fl2va) and "
+                        "reference (ref2va) extras are refused with an explicit error: "
+                        "this sampler has not implemented or verified the causal packed "
+                        "layout for condition rows, so refusing beats dropping them "
+                        "silently. That is an implementation limit here, not a "
+                        "statement about the RAVEN LoRA."
                     },
                 ),
                 "latent": (

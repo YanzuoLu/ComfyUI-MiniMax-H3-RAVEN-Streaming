@@ -2,10 +2,14 @@
 
 Scope (M2)
 ----------
-T2VA only, single batch, single GPU, no CFG, no references, no keyframes, no
-sequence/FSDP parallelism, no training path. What lands here is the *causal
-lane*: a text prefill, a per-chunk forward against a KV cache, and nothing else.
-The sampler (M3) drives it; no node, no sampler and no web code lives here.
+This implementation currently models **text rows plus target (video + audio)
+rows**; condition rows -- the ones reference (``ref2va``) and keyframe
+(``fl2va``) conditioning add -- are not implemented, and neither is CFG,
+batch > 1, multi-GPU, sequence/FSDP parallelism or any training path. That is
+the coverage of this causal lane, not a claim about the RAVEN LoRA or the
+official H3 model. What lands here is the *causal lane*: a text prefill, a
+per-chunk forward against a KV cache, and nothing else. The sampler (M3) drives
+it; no node, no sampler and no web code lives here.
 
 Three classes, each a subclass of its official counterpart in
 ``comfy.ldm.minimax.model``:

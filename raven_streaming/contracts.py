@@ -7,7 +7,10 @@ failing **loudly**:
 
 * the official ``CONDITIONING`` produced by ``MiniMaxH3ImageToVideo`` in its
   T2VA form -- exactly one positive entry, no negative, no CFG, no scheduling,
-  no hooks, no keyframes / references / guides / controls;
+  no hooks, no keyframes / references / guides / controls. The keyframe and
+  reference refusals are a limit of *this sampler implementation* (the causal
+  packed layout for condition rows is not implemented or verified here), not a
+  statement about what the RAVEN LoRA or the official H3 model can do;
 * the official ``LATENT`` produced by ``EmptyMiniMaxH3LatentAV`` /
   ``MiniMaxH3ImageToVideo`` -- a two-stream ``NestedTensor`` pair
   ``(video [1, 24, T, H/16, W/16], audio [1, 32, 2, T40])`` at batch size 1,
@@ -96,10 +99,26 @@ ALLOWED_CONDITIONING_KEYS: frozenset = frozenset({"pooled_output", "minimax_toke
 
 #: Extras we know about and refuse, with the reason shown to the user.
 UNSUPPORTED_CONDITIONING_KEYS: Dict[str, str] = {
-    "minimax_keyframes": "keyframe (fl2va) conditioning; the streaming sampler is T2VA only",
-    "minimax_refs": "reference (ref2va) conditioning; the streaming sampler is T2VA only",
-    "minimax_visual_cond_noise_aug": "condition-row noise augmentation; there are no condition rows in T2VA",
-    "minimax_audio_cond_noise_aug": "condition-row noise augmentation; there are no condition rows in T2VA",
+    "minimax_keyframes": (
+        "keyframe (fl2va) conditioning. This streaming sampler has not implemented "
+        "or verified the causal packed layout for condition rows, so it refuses the "
+        "input instead of silently ignoring it. This is a limit of the sampler's "
+        "runtime implementation, not a claim about what the RAVEN LoRA supports"
+    ),
+    "minimax_refs": (
+        "reference (ref2va) conditioning. This streaming sampler has not implemented "
+        "or verified the causal packed layout for reference rows, so it refuses the "
+        "input instead of silently ignoring it. This is a limit of the sampler's "
+        "runtime implementation, not a claim about what the RAVEN LoRA supports"
+    ),
+    "minimax_visual_cond_noise_aug": (
+        "condition-row noise augmentation; this sampler implements no condition rows "
+        "(a runtime implementation limit, not a LoRA capability claim)"
+    ),
+    "minimax_audio_cond_noise_aug": (
+        "condition-row noise augmentation; this sampler implements no condition rows "
+        "(a runtime implementation limit, not a LoRA capability claim)"
+    ),
     "control": "ControlNet; the chunk-major loop never runs comfy.samplers' control path",
     "control_apply_to_uncond": "ControlNet; the chunk-major loop never runs comfy.samplers' control path",
     "gligen": "GLIGEN conditioning is not part of the H3 lane",
@@ -252,7 +271,7 @@ UNSUPPORTED_LATENT_KEYS: Dict[str, str] = {
 
 @dataclass(frozen=True)
 class LatentRequest:
-    """One validated empty T2VA request, plus the request grid it implies."""
+    """One validated empty AV request, plus the request grid it implies."""
 
     video: torch.Tensor
     audio: torch.Tensor
@@ -325,6 +344,11 @@ def parse_latent(latent: Any, *, warn_experimental: bool = True) -> LatentReques
     its own fresh noise, so an incoming latent would be discarded. img2img /
     latent-continuation semantics are not implemented, and pretending otherwise
     would silently ignore the user's input.
+
+    This says nothing about image- or reference-conditioned H3 modes: the
+    official nodes carry keyframes and references in the *conditioning extras*
+    and still hand the sampler an empty target latent. Those extras are handled
+    (and currently refused) in :func:`parse_conditioning`, not here.
     """
     if latent is None:
         raise ContractError("latent is required")

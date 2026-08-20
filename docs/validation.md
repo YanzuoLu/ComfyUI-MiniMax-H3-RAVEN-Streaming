@@ -90,7 +90,7 @@ be quoted as the M2 result: `m2_full_comfy.json` and `m2_full_comfy_exact.json`
 
 | | |
 |---|---|
-| Final measured | **2626 passed, 12 skipped** with `RAVEN_ROOT` set to the real RAVEN checkout; **2623 passed, 15 skipped** without it. **0 failures** either way. |
+| Final measured | **2624 passed, 12 skipped** with `RAVEN_ROOT` set to the real RAVEN checkout; **2621 passed, 15 skipped** without it. **0 failures** either way. |
 | Scope | `tests/` — unit, contract, protocol, workflow and probe tests. No GPU or weights are required for the bulk of them; upstream/RAVEN-dependent cases skip when their checkout is unavailable. |
 | Commands | `env -u RAVEN_ROOT .cache/venv/bin/python -m pytest tests -q` and `RAVEN_ROOT=/Users/ol125/Documents/RAVEN .cache/venv/bin/python -m pytest tests -q` |
 | Other final checks | Web protocol **32/32**; Web controller **29/29**; `compileall` clean; workflow structural checker passed; Ruff fatal rules `E9,F63,F7,F82` passed. |
@@ -110,22 +110,22 @@ for.
 The end-to-end lane has **run**. Seven final artifacts back the rows below, all
 `ok: true` with **0 failures**:
 
-| Artifact | Lane | Checks | SHA256 |
-|---|---|---|---|
-| `.cache/probe_raven_integration_24g_192f_vr.json` | synthetic, simulated 24 GiB envelope | 86/86 | `dc8fd409687fc6bc12354a80792c7729390688c8b02c24fe88ec662a1f682f53` |
-| `.cache/probe_raven_integration_362_final_vr.json` | synthetic, 362-frame maximum | 86/86 | `1caa81d93c8a8a602b7ac03c35c7fb2f46794e4e7654215e97b285b456cc02d5` |
-| `.cache/probe_raven_integration_text_final_vr.json` | **real text encoder** | 100/100 | `969203657cc56c33fc044d3fdca7cba0a646fb909894cc83536d8947cd7ff12f` |
-| `.cache/probe_raven_integration_thirdparty_final_vr.json` | official `LoraLoaderModelOnly` | 101/101 | `f0f496e97d5294ef684d648c22c260db832f0d919cf52fd3b2326e4ad44f9cb7` |
-| `.cache/probe_raven_integration_kv_cpu_final_vr.json` | `cpu_pinned` KV, two runs | 172/172 | `3f82a02691bdc74a742dee3213939a65c3726eb306d8ad76fffcceeb3568ef7e` |
-| `.cache/probe_raven_integration_kv_gpu_final_vr.json` | GPU KV, two runs | 172/172 | `5b41dc4e284fa605345021225048c7fa3afdf9117443cfb214334eac5f79a430` |
-| `.cache/probe_raven_integration_cancel_chunk2_repeat3_final_vr.json` | delivered-chunk cancel + three runs | 301/301 | `58d13b1dc5a9378aea5864315e285147d31be5c89fe54ba1525bc41998289e51` |
+| Artifact | Lane | Checks |
+|---|---|---|
+| `.cache/probe_raven_integration_24g_192f_vr.json` | synthetic, simulated 24 GiB envelope | 86/86 |
+| `.cache/probe_raven_integration_362_final_vr.json` | synthetic, 362-frame maximum | 86/86 |
+| `.cache/probe_raven_integration_text_final_vr.json` | **real text encoder** | 100/100 |
+| `.cache/probe_raven_integration_thirdparty_final_vr.json` | official `LoraLoaderModelOnly` | 101/101 |
+| `.cache/probe_raven_integration_kv_cpu_final_vr.json` | `cpu_pinned` KV, two runs | 172/172 |
+| `.cache/probe_raven_integration_kv_gpu_final_vr.json` | GPU KV, two runs | 172/172 |
+| `.cache/probe_raven_integration_cancel_chunk2_repeat3_final_vr.json` | delivered-chunk cancel + three runs | 301/301 |
 
 Driver: `tools/probe_raven_integration.py`. Box: `NVIDIA H200`, cu128, Torch
 `2.11.0+cu128`, Python `3.10.20`, ComfyUI `0.33.0` @ `c67885b`, PyAV `17.1.0`.
 
 > **Which lane proves what.** The two large runs (192 and 362 frames) use
 > **synthetic conditioning**: no text encoder is loaded, and the `CONDITIONING`
-> is a deterministic `[1, 128, 5120]` tensor (`sha256 5ec04ed9…`) drawn from
+> is a deterministic `[1, 128, 5120]` tensor drawn from
 > `manual_seed(seed ^ 0x52415645)` with constant token tags. They therefore
 > verify the **DiT / VAE / media / node** lane at scale and make no claim about
 > the text encoder. The text encoder has its **own** run — 39 frames, a real
@@ -133,17 +133,16 @@ Driver: `tools/probe_raven_integration.py`. Box: `NVIDIA H200`, cu128, Torch
 > immediately below.
 
 **Official third-party LoRA chaining.** The public Apache-2.0
-`drbaph/MiniMax-H3-Turbo-Lora-ComfyUI` dynamic-rank LoRA (298 177 224 B,
-SHA256 `1b85da614014024a0c9507f12558917dcc69b6adb564e716324594f401723115`)
+`drbaph/MiniMax-H3-Turbo-Lora-ComfyUI` dynamic-rank LoRA (298 177 224 B)
 was loaded by upstream's own `nodes.LoraLoaderModelOnly` at strength 0.05 after
 the mandatory RAVEN loader. The gate observed 208 non-zero base-weight patches,
 0 unmatched keys, 0 residual-parameter targets, the same 266-module RAVEN
 attachment, and a complete 39-frame generation.
 
 **CPU/GPU KV parity.** Independent two-run reports used `cpu_pinned` and `gpu`
-KV storage. The last warm runs matched bit-for-bit for all four artifacts:
-video latent `2268f35a…`, audio latent `53803abb…`, IMAGE `af573e7b…`, and
-AUDIO `ce1f82d5…`. Moving the canonical BF16 KV bytes to host memory changes
+KV storage. Direct tensor comparisons of the last warm runs matched bit-for-bit
+for video latent, audio latent, IMAGE and AUDIO. Moving the canonical BF16 KV
+bytes to host memory changes
 residency and transfer cost, not the result.
 
 ### 192 frames — 1376x768, inside a 24 GiB envelope
@@ -202,8 +201,7 @@ frames, 92 % at 362.
 The run that closes the gap the two synthetic runs leave open: the prompt goes
 through the **official** nodes, end to end, on the real NVFP4 encoder.
 `ok: true`, **100 checks, 0 failures**. 512x288, 39 frames, prompt *"a cat
-playing a trumpet on a rooftop at sunset, jazzy soundtrack"*
-(`sha256 b16c7d53…`, 64 characters).
+playing a trumpet on a rooftop at sunset, jazzy soundtrack"* (64 characters).
 
 **Text lane** — official nodes, not a re-implementation:
 
@@ -213,10 +211,19 @@ playing a trumpet on a rooftop at sunset, jazzy soundtrack"*
 | Encoder | `qwen3vl_32b_minimax_h3_nvfp4_awq.safetensors`, **load 4.27 s**, `model_size` 15 686 911 147 B |
 | Encode | **5.58 s**, with `load_models_gpu` putting the encoder on `['cuda:0']` |
 | **Residency during sampling** | `loaded_size = 0`, all **51 509 571 044 B** of parameters (1003 tensors) back on `cpu`. The encoder holds **no** VRAM while the rollout runs — which is the claim the README makes and this is the measurement behind it. Offload via `unload_model_and_clones`, 7.73 s |
-| Conditioning | exactly 1 entry; context **`[1, 15, 5120]`** fp32, finite (`sha256 f4da3412…`). 5120 is the raw Qwen3-VL width the DiT knows (already-refined states would be 5376) |
+| Conditioning | exactly 1 entry; context **`[1, 15, 5120]`** fp32 and finite. 5120 is the raw Qwen3-VL width the DiT knows (already-refined states would be 5376) |
 | Token tags | `[15]`, all 15 tagged `text(1)`, 0 video / 0 audio — one tag per token |
 | T2VA shape confirmed | extras are `['minimax_token_tags', 'pooled_output']` only: **no `minimax_keyframes`, no `minimax_refs`**, because no frames were passed |
 | Latent | official `MiniMaxH3ImageToVideo` built `(39, 512, 288, latent_t 12, audio_t 65)` — exactly the requested grid — and it is **empty**, as the sampler requires |
+
+What this row does **not** say: that the RAVEN LoRA is text-only. It records the
+shape of *this* run — a T2VA graph, so no condition/reference extras were
+produced. The sampler refuses `minimax_keyframes` / `minimax_refs` because its
+causal packed layout does not implement condition rows, which is a property of
+this implementation and not a measured LoRA capability. Note also that the
+empty-latent requirement is unrelated: the official image- and
+reference-conditioned nodes carry their conditioning in the **conditioning
+extras** and still hand over an empty target latent.
 
 **Rollout and outputs:**
 
@@ -266,8 +273,7 @@ pairwise matrices are all ones:
 
 The earlier cold-first IMAGE difference was CUDA backend initialization, not a
 sampler or VAE-state leak: the delivered-chunk cancellation exercises and warms
-the real VAE before the three gated runs, which then produce the same IMAGE SHA
-`af573e7b2a7977dab538efb64e351d2e56a8b3ba687f339252b1c9dff3c48874`.
+the real VAE before the three gated runs, which then produce bitwise-identical IMAGE tensors.
 
 **Memory plateau**, gated on the last two runs:
 
@@ -342,7 +348,7 @@ entry exists. The checks below validate the package without publishing it.
 | `comfy node validate` | **"All validation checks passed successfully"** (configuration + security checks) | `comfy-cli 1.16.0` installed into an isolated, project-local `.cache/registry-venv`, run as `.cache/registry-venv/bin/comfy --json node validate` |
 | Upstream's own parser | **passes** | the real `comfy_config.config_parser.extract_node_configuration('.')` from the pinned ComfyUI checkout — not a re-implementation |
 | Parsed metadata | `publisher_id = yanzuolu`, `supported_comfyui_version = >=0.30.0`, `supported_os = ['OS Independent']`, `supported_accelerators = ['GPU :: NVIDIA CUDA']`, **`web = None`** | same call |
-| `comfy node pack` | **passed**: 45 files, 936 821 uncompressed bytes; ZIP SHA256 `5537989ae4ee95f70c986fbd088ccc7b8fd2cd2403a7b51d99cc21795b7febb0` | packed with the custom-node template JSON/JPG and separate API prompt, then moved to `.cache/registry-pack/comfyui-minimax-h3-raven-streaming-0.1.0.zip` |
+| `comfy node pack` | **passed**: 45 files | packed with the custom-node template JSON/JPG and separate API prompt, then moved to `.cache/registry-pack/comfyui-minimax-h3-raven-streaming-0.1.0.zip` |
 | Archive contents | required runtime, `web/`, `example_workflows/`, `api_workflows/`, README/LICENSE/NOTICE/metadata present; **no** `tests/`, `tools/`, `docs/`, `.cache/`, model or IO trees | `unzip -Z1` allow/exclusion audit; full listing in `.cache/final_pack_listing.txt` |
 
 `web = None` is the intended value, not an omission: `WEB_DIRECTORY = "./web"`

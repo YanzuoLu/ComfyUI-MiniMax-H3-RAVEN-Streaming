@@ -43,7 +43,9 @@ Without ``--text-encoder`` / ``--prompt`` **no text encoder is loaded**. The
 ``CONDITIONING`` is then *synthetic but deterministic*: a fixed-seed CPU draw of
 ``[1, L, 5120]`` (the official Qwen3-VL width, so ``prefill_text`` still runs
 ``condition_proj`` and the token refiner exactly as it would on real states)
-plus an all-text ``minimax_token_tags`` vector, both SHA-256'd into the report.
+plus an all-text ``minimax_token_tags`` vector, both described in the report by
+shape, dtype and the exact generator that drew them, so the input is
+reproducible from the report alone.
 What that mode verifies is the DiT / VAE / media / node lane; a claim about text
 conditioning is **not** one of its outputs.
 
@@ -120,15 +122,15 @@ no pending frames, no audio history, no IMAGE, no AUDIO. The decoders' own
 ``abort()`` is feature-probed rather than assumed: where it exists it must have
 been called, and where it does not the effect gate still stands.
 
-The KV cache lane, and comparing two of them
---------------------------------------------
+The KV cache lane
+-----------------
 ``--kv-cache-storage {cpu_pinned,cpu,gpu}`` is passed straight through to
-``RAVENStreamingSampler.sample`` and recorded. Every run also fingerprints its
-four output tensors -- both latent streams, the IMAGE and the AUDIO -- with a
-SHA-256 over their contiguous CPU bytes with dtype and shape hashed in
-(:func:`artifact_digest`). Two reports produced with different storage modes
-can therefore be compared *by their digests alone*: where the cache lives is
-not supposed to change a single bit of the result.
+``RAVENStreamingSampler.sample`` and recorded, and every run publishes the
+shape, dtype and statistics of its four output tensors -- both latent streams,
+the IMAGE and the AUDIO. Whether the storage mode changed the result is
+settled inside one process by ``--repeat``, which compares the tensors
+themselves bitwise; the report describes the outputs, it does not stand in for
+them.
 
 A standard Comfy LoRA stacked on top, on request
 ------------------------------------------------
@@ -161,8 +163,8 @@ What that answers is the claim ``README.md`` makes -- "stock
 * the full sample then runs on the stacked ``MODEL`` and has to produce the
   whole product surface -- LATENT, IMAGE, AUDIO and a complete preview stream.
 
-The file's resolved path, size and SHA-256 go into the report, because "a LoRA"
-is not a fact and *that* file is.
+The file's resolved path and size go into the report, because "a LoRA" is not a
+fact and *that* file is.
 
 Usage
 -----
@@ -210,7 +212,6 @@ import base64
 import contextlib
 import functools
 import gc
-import hashlib
 import io
 import json
 import logging
@@ -283,9 +284,6 @@ RAVEN_RESIDUAL_PARAM_PREFIXES = ("raven_lora_A_", "raven_lora_B_")
 #: LoRA has hundreds of modules and the shapes repeat.
 STACKED_PATCH_DETAIL_LIMIT = 16
 
-#: Bytes read at a time when fingerprinting the stacked LoRA file.
-DIGEST_CHUNK_BYTES = 8 * 1024 * 1024
-
 #: Where the sampler keeps the committed chunk KV cache
 #: (``nodes.KV_CACHE_STORAGE_CHOICES`` / ``nodes.DEFAULT_KV_CACHE_STORAGE``).
 #: Mirrored here so ``build_parser`` stays importable without the package, and
@@ -294,14 +292,6 @@ DIGEST_CHUNK_BYTES = 8 * 1024 * 1024
 #: instead of by the flag that offered it.
 KV_CACHE_STORAGE_CHOICES = ("cpu_pinned", "cpu", "gpu")
 DEFAULT_KV_CACHE_STORAGE = "cpu_pinned"
-
-#: Version tag mixed into every artifact digest. It is part of the hashed
-#: preamble, so a change to *how* the digest is computed cannot be mistaken for
-#: a change in the tensor: two reports only compare if they agree on this.
-ARTIFACT_DIGEST_VERSION = "raven-artifact-sha256-v1"
-
-#: The four output tensors a run is fingerprinted by, in report order.
-ARTIFACT_NAMES = ("video_latent", "audio_latent", "images", "waveform")
 
 #: What ``CLIPLoader``'s ``type`` combo calls the MiniMax family. Matched
 #: case-insensitively against the *live* schema; never assumed to be present.
@@ -516,7 +506,7 @@ class Report:
             if stacked:
                 lines.append(
                     "stacked lora: {}.{}({!r}, strength={}) -> {} patched key(s), "
-                    "{} non-zero, {} unmatched | {} ({} bytes, sha256 {})".format(
+                    "{} non-zero, {} unmatched | {} ({} bytes)".format(
                         stacked.get("node_class"),
                         stacked.get("node_function"),
                         stacked.get("lora_name"),
@@ -526,7 +516,6 @@ class Report:
                         len(stacked.get("unmatched_warnings") or []),
                         stacked.get("path"),
                         stacked.get("bytes"),
-                        (stacked.get("sha256") or "")[:16],
                     )
                 )
         for run in self.runs:
@@ -566,15 +555,6 @@ class Report:
                         streaming.get("frames_muxed_before_finish"),
                         streaming.get("frames_muxed_total"),
                         streaming.get("emitting_chunks"),
-                    )
-                )
-            digests = (run.get("outputs", {}) or {}).get("digests", {})
-            if digests:
-                lines.append(
-                    "        digests: "
-                    + " ".join(
-                        "{}={}".format(name, (entry.get("sha256") or "")[:16])
-                        for name, entry in digests.items()
                     )
                 )
             cancel = run.get("chunk_cancel")
@@ -898,80 +878,6 @@ def cuda_stats(device: torch.device) -> Dict[str, int]:
 # --------------------------------------------------------------------------
 
 
-def tensor_digest(tensor: Any) -> str:
-    """SHA-256 of a tensor's exact bytes, so "same input" is checkable."""
-    array = tensor.detach().to("cpu").contiguous()
-    return hashlib.sha256(memoryview(array.numpy()).tobytes()).hexdigest()
-
-
-def tensor_raw_bytes(tensor: Any) -> bytes:
-    """The tensor's storage as bytes, C-contiguous, on the host.
-
-    ``.numpy()`` cannot do this for every dtype the model produces (bfloat16
-    has no numpy equivalent), so the tensor is flattened -- which is already a
-    no-op on a contiguous tensor -- and reinterpreted as ``uint8``. That works
-    for every dtype and, being a reinterpretation rather than a conversion,
-    hashes the *stored* value rather than a rounded copy of it.
-
-    The bytes are host-endian. Every machine this runs on is little-endian, and
-    the digest is a cross-report comparison rather than an archival format, so
-    that is stated rather than defended against.
-    """
-    flat = tensor.detach().to("cpu").contiguous().reshape(-1)
-    if flat.numel() == 0:
-        return b""
-    return flat.view(torch.uint8).numpy().tobytes()
-
-
-def artifact_digest(tensor: Any) -> Optional[Dict[str, Any]]:
-    """A stable SHA-256 fingerprint of one output tensor.
-
-    Defined precisely, because the whole point is that two *independent* runs --
-    a different process, a different box, a different ``--kv-cache-storage`` --
-    can be compared by their reports alone:
-
-        sha256( "raven-artifact-sha256-v1|<dtype>|<d0,d1,...>|" (ascii)
-                + the tensor's contiguous CPU bytes )
-
-    dtype and shape are **inside** the hash, so a reshape or a dtype change can
-    never collide with the tensor it came from, and the version tag means a
-    change to this definition shows up as "different digest scheme" rather than
-    as "different clip".
-    """
-    if not isinstance(tensor, torch.Tensor):
-        return None
-    shape = list(tensor.shape)
-    preamble = "{}|{}|{}|".format(
-        ARTIFACT_DIGEST_VERSION, str(tensor.dtype), ",".join(str(int(d)) for d in shape)
-    )
-    digest = hashlib.sha256()
-    digest.update(preamble.encode("ascii"))
-    raw = tensor_raw_bytes(tensor)
-    digest.update(raw)
-    return {
-        "sha256": digest.hexdigest(),
-        "dtype": str(tensor.dtype),
-        "shape": shape,
-        "bytes": len(raw),
-        "scheme": ARTIFACT_DIGEST_VERSION,
-    }
-
-
-def artifact_digests(artifacts: Any) -> Dict[str, Any]:
-    """``{artifact name: digest}`` for the four tensors a run is identified by.
-
-    Missing artifacts are simply absent: a cancelled run has none, and a run
-    that failed half way through has some. Reporting the ones that exist is
-    more useful than refusing to report any.
-    """
-    out: Dict[str, Any] = {}
-    for name in ARTIFACT_NAMES:
-        digest = artifact_digest((artifacts or {}).get(name))
-        if digest is not None:
-            out[name] = digest
-    return out
-
-
 def build_conditioning(
     text_len: int, seed: int, *, dim: int = TEXT_EMBED_DIM
 ) -> Tuple[List[List[Any]], Dict[str, Any]]:
@@ -979,9 +885,9 @@ def build_conditioning(
 
     Drawn on the **CPU** from a private generator, never the global stream, and
     never on the GPU: a CPU draw is bit-identical across devices and driver
-    versions, so the report's hash identifies the input everywhere. The rollout
-    moves it to the compute device and casts it itself, exactly as it does with
-    real encoder output.
+    versions, so the seed and the generator recorded in the report are enough to
+    reproduce the input everywhere. The rollout moves it to the compute device
+    and casts it itself, exactly as it does with real encoder output.
 
     ``minimax_token_tags`` is all-``TEXT_TAG``: the official tag vector marks
     the vision spans of a multimodal prompt, and this probe sends none.
@@ -1006,12 +912,10 @@ def build_conditioning(
             CONDITIONING_SEED_SALT
         ),
         "seed": int(seed),
-        "sha256": tensor_digest(cross_attn),
         "token_tags": {
             "value": int(layout_mod.TEXT_TAG),
             "shape": list(tags.shape),
             "dtype": str(tags.dtype),
-            "sha256": tensor_digest(tags),
         },
         "caveat": (
             "this probe verifies the DiT / VAE / media / node lane only; it makes no "
@@ -1022,7 +926,7 @@ def build_conditioning(
 
 
 def describe_rollout_rng(seed: int, device: Any) -> Dict[str, Any]:
-    """How the *rollout's* noise is drawn, recorded next to the input hashes.
+    """How the *rollout's* noise is drawn, recorded next to the input's own draw.
 
     Two different generators decide a run and they are not interchangeable:
     the conditioning above is a CPU draw made by this probe, while every noise
@@ -1312,26 +1216,18 @@ def raven_residual_prefixes() -> Tuple[str, ...]:
     return tuple(p for p in prefixes if p) or RAVEN_RESIDUAL_PARAM_PREFIXES
 
 
-def file_fingerprint(path: Path) -> Dict[str, Any]:
-    """Resolved path, size and SHA-256 of a file the probe was pointed at.
+def file_info(path: Path) -> Dict[str, Any]:
+    """Resolved path and size of a file the probe was pointed at.
 
-    "a LoRA was stacked" is not a fact anyone can re-check; *this* file was is.
-    The digest is streamed, because a LoRA can be gigabytes.
+    "a LoRA was stacked" is not a fact anyone can re-check; *which* file was is.
+    Both facts come from the filesystem metadata -- the file itself is never
+    read here, because a LoRA can be gigabytes and the loader is about to read
+    it anyway.
     """
     resolved = Path(path).resolve()
-    digest = hashlib.sha256()
-    size = 0
-    with open(resolved, "rb") as handle:
-        while True:
-            block = handle.read(DIGEST_CHUNK_BYTES)
-            if not block:
-                break
-            size += len(block)
-            digest.update(block)
     return {
         "path": str(resolved),
-        "bytes": size,
-        "sha256": digest.hexdigest(),
+        "bytes": int(resolved.stat().st_size),
     }
 
 
@@ -1562,11 +1458,10 @@ def check_stacked_lora(record: Dict[str, Any], checks: Checks) -> None:
     """
     checks.note(
         "stacked lora: the file",
-        "{} -> {} ({} bytes, sha256 {})".format(
+        "{} -> {} ({} bytes)".format(
             record.get("lora_name"),
             record.get("path"),
             record.get("bytes"),
-            record.get("sha256"),
         ),
     )
     checks.expect(
@@ -1725,7 +1620,7 @@ def stack_official_lora(
             )
         )
 
-    fingerprint = file_fingerprint(Path(str(resolved)))
+    file_facts = file_info(Path(str(resolved)))
     inner = getattr(model, "model", None)
     attachment = getattr(inner, "raven_lora_attachment", None)
     diffusion_model = getattr(inner, "diffusion_model", None)
@@ -1749,7 +1644,7 @@ def stack_official_lora(
         "attachment_modules_before": len(getattr(attachment, "entries", []) or []),
         "expected_attachment_modules": expected_modules,
     }
-    record.update(fingerprint)
+    record.update(file_facts)
 
     node = node_cls()
     record["node_instance"] = type(node).__name__
@@ -2129,7 +2024,6 @@ def check_text_lane_outputs(
         "dtype": str(context.dtype),
         "device": str(context.device),
         "finite": bool(torch.isfinite(context.float()).all()),
-        "sha256": tensor_digest(context.float()),
     }
     summary["text_len"] = int(parsed.text_len)
     expect("text: the context is finite", summary["context"]["finite"])
@@ -2169,7 +2063,6 @@ def check_text_lane_outputs(
             "dtype": str(tags.dtype),
             "device": str(tags.device),
             "histogram": histogram,
-            "sha256": tensor_digest(tags),
         }
         expect(
             "text: the tag vector covers every token",
@@ -2262,7 +2155,6 @@ def run_text_lane(
     """
     summary: Dict[str, Any] = {
         "prompt": str(prompt),
-        "prompt_sha256": hashlib.sha256(str(prompt).encode("utf-8")).hexdigest(),
         "prompt_characters": len(str(prompt)),
         "path": str(text_encoder_path),
     }
@@ -3698,13 +3590,6 @@ def check_outputs(
                 "peak={:.6f}".format(observed, AUDIO_NORMALISED_STD, peak),
             )
 
-    # -- the run's fingerprint -------------------------------------------
-    #
-    # Digested from the CPU copies, not from the live tensors: those copies are
-    # what every later comparison is made against, so hashing anything else
-    # would let the digest and the comparison disagree. Computed once, here,
-    # because hashing a 39-frame IMAGE is tens of MB of work.
-    summary["digests"] = artifact_digests(artifacts)
     return summary, checks, artifacts
 
 
@@ -4113,21 +3998,8 @@ def compare_run_series(runs: Sequence[Dict[str, Any]]) -> Tuple[Dict[str, Any], 
         "adjacent": [],
         "pairwise": [],
         "bitwise_matrix": {},
-        "digests": [],
         "memory": {},
     }
-
-    # The fingerprints go in whatever the count is: one run cannot be compared
-    # to anything *here*, but its digests are exactly what a second report --
-    # the other --kv-cache-storage, another box -- is compared against.
-    summary["digests"] = [
-        {
-            "run": run.get("index", position),
-            "position": position,
-            "artifacts": artifact_digests(run.get("artifacts", {})),
-        }
-        for position, run in enumerate(runs, start=1)
-    ]
 
     if len(runs) < 2:
         summary["memory"] = {
@@ -5538,8 +5410,7 @@ def build_parser() -> argparse.ArgumentParser:
                              "'gpu' keeps it on the card -- fastest, and the mode whose "
                              "memory the budget has to cover; 'cpu'/'cpu_pinned' keep it "
                              "in host memory, pinned so the per-chunk copies can overlap. "
-                             "The mode is recorded in the report, so two runs that differ "
-                             "only in it can be compared by their artifact digests".format(
+                             "The mode is recorded in the report".format(
                                  DEFAULT_KV_CACHE_STORAGE))
     parser.add_argument("--repeat", type=repeat_count, default=1, metavar="N",
                         help="sampled runs in one process, 1-{}. 2 or more runs the "

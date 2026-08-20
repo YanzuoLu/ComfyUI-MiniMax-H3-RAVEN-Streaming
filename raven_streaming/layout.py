@@ -1,12 +1,15 @@
-"""T2VA packed-sequence geometry for the chunk-causal MiniMax H3 lane (M2).
+"""Packed-sequence geometry for the chunk-causal MiniMax H3 lane (M2).
 
 Scope
 -----
-**T2VA only.** No keyframes (``fl2va``), no references (``ref2va``), no
-condition rows, batch size 1. Those layouts exist upstream in
+**This implementation currently models text rows plus target (video + audio)
+rows only.** Condition rows -- the ones keyframe (``fl2va``) and reference
+(``ref2va``) conditioning add -- are *not implemented* here, and batch size is
+fixed at 1. Those layouts exist upstream in
 ``comfy.ldm.minimax.model.PackedLayout``; this module deliberately implements
 only the target-stream geometry the RAVEN streaming sampler needs, cut into
-time chunks.
+time chunks. That is a statement about this module's coverage, not about what
+the RAVEN LoRA or the official H3 model support.
 
 What this module owns
 ---------------------
