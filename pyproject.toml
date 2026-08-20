@@ -33,7 +33,7 @@ Documentation = "https://github.com/YanzuoLu/ComfyUI-MiniMax-H3-RAVEN-Streaming#
 Issues = "https://github.com/YanzuoLu/ComfyUI-MiniMax-H3-RAVEN-Streaming/issues"
 
 [tool.comfy]
-PublisherId = "yanzuolu"
+PublisherId = "oliveryanzuolu"
 DisplayName = "MiniMax H3 RAVEN Streaming"
 # Target minimum, NOT a verified floor: 0.30 has never been run. The audited and
 # measured baseline is ComfyUI 0.33.0 (commit
@@ -65,10 +65,9 @@ includes = []
 #   RAVENStreamingSampler -> "RAVEN Streaming Sampler"
 
 # ---------------------------------------------------------------------------
-# Registry publishing: manual only, and not done yet.
-#
-# There is no publish workflow in this repository by design. When it happens it
-# is a person running comfy-cli under publisher id `yanzuolu`.
+# Registry publishing is manual only; there is no publish workflow in this
+# repository by design. When it happens it is a person running comfy-cli under
+# publisher id `oliveryanzuolu`.
 #
 # Dry run (validates this file and what .comfyignore would ship, without
 # creating a tag, release or Registry entry):
@@ -100,5 +99,6 @@ includes = []
 #     -- 45-file local archive; custom template JSON/JPG included and
 #        forbidden-content audit passed.
 #
-# `comfy node publish` creates the Registry entry. It has not been run.
+# `comfy node publish` creates the Registry entry. It is run manually with the
+# publisher token; the token is never stored in this repository.
 # ---------------------------------------------------------------------------

@@ -16,7 +16,7 @@ here.
 | Version | `0.1.0` |
 | License | MIT (code only) |
 | Public repository | <https://github.com/YanzuoLu/ComfyUI-MiniMax-H3-RAVEN-Streaming> |
-| Comfy Registry PublisherId | `yanzuolu` |
+| Comfy Registry PublisherId | `oliveryanzuolu` |
 | Publishing | **Manual only.** No publish GitHub Action, no CI publishing. |
 
 ## 2. Functional requirements
