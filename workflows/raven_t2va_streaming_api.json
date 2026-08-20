@@ -1,0 +1,100 @@
+{
+  "1": {
+    "class_type": "RAVENModelLoader",
+    "inputs": {
+      "unet_name": "minimax_h3_fl2va_bf16.safetensors",
+      "lora_name": "minimax_h3_raven_streaming_lora_4nfe_preview.safetensors",
+      "weight_dtype": "default"
+    },
+    "_meta": {
+      "title": "RAVEN Model Loader"
+    }
+  },
+  "2": {
+    "class_type": "CLIPLoader",
+    "inputs": {
+      "clip_name": "qwen3vl_32b_minimax_h3_nvfp4_awq.safetensors",
+      "type": "minimax",
+      "device": "default"
+    },
+    "_meta": {
+      "title": "Load CLIP"
+    }
+  },
+  "3": {
+    "class_type": "VAELoader",
+    "inputs": {
+      "vae_name": "minimax_h3_video_vae_fp16.safetensors"
+    },
+    "_meta": {
+      "title": "Load VAE (video)"
+    }
+  },
+  "4": {
+    "class_type": "VAELoader",
+    "inputs": {
+      "vae_name": "minimax_h3_audio_vae_fp32.safetensors"
+    },
+    "_meta": {
+      "title": "Load VAE (audio)"
+    }
+  },
+  "5": {
+    "class_type": "MiniMaxH3ImageToVideo",
+    "inputs": {
+      "clip": ["2", 0],
+      "vae": ["3", 0],
+      "prompt": "A neon-lit street at night after rain, camera pushes slowly forward, distant traffic hum and footsteps on wet asphalt.",
+      "width": 1376,
+      "height": 768,
+      "length": 192
+    },
+    "_meta": {
+      "title": "MiniMax H3 Image to Video (T2VA: no frame inputs)"
+    }
+  },
+  "6": {
+    "class_type": "RAVENStreamingSampler",
+    "inputs": {
+      "model": ["1", 0],
+      "positive": ["5", 0],
+      "latent": ["5", 1],
+      "video_vae": ["3", 0],
+      "audio_vae": ["4", 0],
+      "seed": 0,
+      "steps": 4,
+      "video_shift": 12,
+      "audio_shift": 3,
+      "sink": 2,
+      "window": 2,
+      "kv_cache_storage": "cpu_pinned"
+    },
+    "_meta": {
+      "title": "RAVEN Streaming Sampler"
+    }
+  },
+  "7": {
+    "class_type": "SaveAnimatedWEBP",
+    "inputs": {
+      "images": ["6", 1],
+      "filename_prefix": "raven_t2va/ComfyUI",
+      "fps": 24,
+      "lossless": false,
+      "quality": 90,
+      "method": "default"
+    },
+    "_meta": {
+      "title": "Save Animated WEBP"
+    }
+  },
+  "8": {
+    "class_type": "SaveAudio",
+    "inputs": {
+      "audio": ["6", 2],
+      "filename_prefix": "raven_t2va/audio"
+    },
+    "_meta": {
+      "title": "Save Audio (FLAC)"
+    }
+  }
+}

@@ -1,0 +1,87 @@
+ComfyUI-MiniMax-H3-RAVEN-Streaming
+Copyright (c) 2026 Yanzuo Lu
+
+This product is licensed under the MIT License; see the LICENSE file for the
+full text. The MIT license in this repository covers only the source code in
+this repository. It does not cover any model weights, LoRA weights, datasets, or
+generated outputs.
+
+--------------------------------------------------------------------------------
+Third-party components this project depends on or references
+--------------------------------------------------------------------------------
+
+ComfyUI
+  https://github.com/comfyanonymous/ComfyUI
+  This project is a ComfyUI custom node package. It depends on ComfyUI at
+  runtime and builds on ComfyUI's official MiniMax H3 support, importing and
+  calling comfy_extras/nodes_minimax_h3.py, comfy/ldm/minimax/*,
+  comfy_extras/nodes_audio.py, comfy.nested_tensor, comfy.model_patcher,
+  comfy.model_management, comfy.sd and folder_paths from the installed ComfyUI.
+  ComfyUI source is NOT vendored, copied or redistributed here: nothing under
+  this repository contains ComfyUI code, and the package is useless without a
+  separate ComfyUI installation that the user provides.
+  Two exceptions are stated plainly rather than hidden:
+    - raven_streaming/layout.py reimplements the frame-grid and canvas
+      arithmetic that exists upstream as private module-level helpers
+      (align_frame_count, video_latent_t, temporal_shape, adapt_canvas), because
+      importing private helpers would be worse; the reimplementation is
+      cross-checked against upstream in tests.
+    - raven_streaming/causal_model.py subclasses upstream's MiniMaxH3Model to
+      add chunk-causal attention; it derives from the installed class rather
+      than copying it.
+  ComfyUI is distributed under its own license (GPL-3.0 as of the audited
+  baseline); consult the upstream repository for the authoritative terms.
+
+MiniMax H3
+  MiniMax H3 is a joint video + audio generation model developed by MiniMax.
+  Weights used by this project are obtained by the user, e.g. from the
+  Comfy-Org/MiniMax-H3 repackaged repository on Hugging Face.
+  This project does not distribute MiniMax H3 weights and does not download them
+  automatically. The weights are subject to the license and usage terms
+  published by their authors, which are separate from and independent of this
+  repository's MIT license. Users must obtain the weights themselves and comply
+  with those terms.
+
+RAVEN
+  This project requires a RAVEN streaming LoRA for MiniMax H3, obtained by the
+  user, e.g. from the mvp-lab/MiniMax-H3-RAVEN-Streaming-LoRA repository on
+  Hugging Face. The LoRA weights are not distributed here and are subject to
+  their own license and usage terms, separate from and independent of this
+  repository's MIT license.
+  The sampling procedure implemented in raven_streaming/consistency.py,
+  raven_streaming/cache.py and raven_streaming/causal_model.py is an
+  independent implementation written against the RAVEN method as published by
+  its authors (chunk-major fresh-noise consistency rollout, attention-sink plus
+  sliding-window KV retention, per-stream trailing timestep grids). It is a
+  reimplementation for ComfyUI, not a copy of a RAVEN codebase, and it carries
+  no endorsement from the RAVEN authors. Anyone with rights questions about the
+  method or the adapter should consult the RAVEN publication and the LoRA
+  repository's own license.
+
+PEFT / LoRA format
+  The adapter file is a plain safetensors PEFT dump. This project parses that
+  format and reproduces the arithmetic of peft.tuners.lora.layer.Linear.forward
+  in raven_streaming/runtime_linear.py. The PEFT library itself is not a
+  dependency and no PEFT code is included.
+
+PyAV (av)
+  https://github.com/PyAV-Org/PyAV
+  A declared runtime dependency, used for fragmented MP4 (fMP4) muxing of the
+  streamed preview segments. Not vendored. Distributed under its own license.
+  PyAV in turn wraps FFmpeg, whose encoders (libx264, AAC, h264_nvenc, ...) are
+  provided by whatever PyAV build the user installs and carry their own licenses
+  and, in some cases, patent considerations. This project selects among the
+  encoders present; it ships none of them.
+
+--------------------------------------------------------------------------------
+
+References to third-party projects, models, papers and trademarks above are for
+identification and attribution only. They do not imply endorsement, sponsorship,
+affiliation or review by ComfyUI, Comfy-Org, MiniMax, the RAVEN authors, or any
+other party. This project is not an official ComfyUI package and has not been
+reviewed or approved by any of them.
+
+This NOTICE is informational; it is not legal advice and makes no determination
+about license compatibility for any particular use. Anyone redistributing this
+software together with third-party components should review those components'
+licenses independently.

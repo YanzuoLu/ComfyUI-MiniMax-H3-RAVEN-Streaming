@@ -1,0 +1,342 @@
+/*
+ * RAVEN Streaming preview widget.
+ *
+ * Styling follows the host: colours come from ComfyUI's own custom properties
+ * where they exist, with fallbacks that match the stock dark theme so the
+ * widget is not blank on a frontend that renames a variable. Everything is
+ * scoped under .rvp; nothing here touches a ComfyUI selector.
+ */
+
+.rvp {
+  --rvp-bg: var(--comfy-input-bg, #1a1c22);
+  --rvp-panel: var(--comfy-menu-bg, #22242c);
+  --rvp-border: var(--border-color, #3b3f4a);
+  --rvp-text: var(--input-text, #e6e8ee);
+  --rvp-muted: var(--descrip-text, #9aa0ae);
+  --rvp-accent: #5ecbc0;
+  --rvp-live: #57c96b;
+  --rvp-busy: #d9a441;
+  --rvp-warn: #dd8a3e;
+  --rvp-bad: var(--error-text, #e06060);
+  --rvp-done: #7c9bd6;
+  --rvp-aspect: 16 / 9;
+
+  container-type: inline-size;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  padding: 0;
+  color: var(--rvp-text);
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  font-size: 11px;
+  line-height: 1.35;
+}
+
+.rvp *,
+.rvp *::before,
+.rvp *::after {
+  box-sizing: border-box;
+}
+
+/* ---------------------------------------------------------------- stage */
+
+.rvp__stage {
+  position: relative;
+  flex: 1 1 auto;
+  min-height: 0;
+  aspect-ratio: var(--rvp-aspect);
+  width: 100%;
+  overflow: hidden;
+  border: 1px solid var(--rvp-border);
+  border-radius: 6px;
+  background:
+    radial-gradient(120% 90% at 50% 0%, rgba(94, 203, 192, 0.07), transparent 70%),
+    #0b0c10;
+}
+
+.rvp__video {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  background: transparent;
+  /* The element is only revealed once it has decoded a frame, so the
+     placeholder is not covered by a black rectangle while waiting. */
+  opacity: 0;
+  transition: opacity 160ms ease;
+}
+
+.rvp--has-frames .rvp__video {
+  opacity: 1;
+}
+
+.rvp__video:focus-visible {
+  outline: 2px solid var(--rvp-accent);
+  outline-offset: -2px;
+}
+
+/* --------------------------------------------------------------- overlay */
+
+.rvp__overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  padding: 8px;
+  text-align: center;
+  color: var(--rvp-muted);
+  pointer-events: none;
+}
+
+.rvp--has-frames .rvp__overlay {
+  display: none;
+}
+
+.rvp__overlay-text {
+  max-width: 100%;
+  overflow-wrap: anywhere;
+}
+
+.rvp__spinner {
+  display: none;
+  width: 11px;
+  height: 11px;
+  flex: 0 0 auto;
+  border: 2px solid rgba(255, 255, 255, 0.16);
+  border-top-color: var(--rvp-accent);
+  border-radius: 50%;
+  animation: rvp-spin 900ms linear infinite;
+}
+
+.rvp--busy .rvp__spinner {
+  display: block;
+}
+
+@keyframes rvp-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* ------------------------------------------------------------------- bar */
+
+.rvp__bar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 22px;
+  padding: 0 1px;
+}
+
+.rvp__status {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  flex: 0 0 auto;
+  white-space: nowrap;
+}
+
+.rvp__dot {
+  width: 7px;
+  height: 7px;
+  flex: 0 0 auto;
+  border-radius: 50%;
+  background: var(--rvp-muted);
+}
+
+.rvp[data-tone='busy'] .rvp__dot {
+  background: var(--rvp-busy);
+}
+
+.rvp[data-tone='live'] .rvp__dot {
+  background: var(--rvp-live);
+  box-shadow: 0 0 0 0 rgba(87, 201, 107, 0.5);
+  animation: rvp-pulse 1.8s ease-out infinite;
+}
+
+.rvp[data-tone='warn'] .rvp__dot {
+  background: var(--rvp-warn);
+}
+
+.rvp[data-tone='bad'] .rvp__dot {
+  background: var(--rvp-bad);
+}
+
+.rvp[data-tone='done'] .rvp__dot {
+  background: var(--rvp-done);
+}
+
+@keyframes rvp-pulse {
+  70% {
+    box-shadow: 0 0 0 6px rgba(87, 201, 107, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(87, 201, 107, 0);
+  }
+}
+
+.rvp__label {
+  font-weight: 600;
+  letter-spacing: 0.01em;
+}
+
+.rvp[data-tone='bad'] .rvp__label {
+  color: var(--rvp-bad);
+}
+
+.rvp__meta {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--rvp-muted);
+  font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+  font-size: 10px;
+}
+
+/* --------------------------------------------------------------- buttons */
+
+.rvp__mute,
+.rvp__action {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  flex: 0 0 auto;
+  height: 20px;
+  padding: 0 7px;
+  border: 1px solid var(--rvp-border);
+  border-radius: 4px;
+  background: var(--rvp-panel);
+  color: var(--rvp-text);
+  font: inherit;
+  font-size: 10px;
+  line-height: 1;
+  cursor: pointer;
+  transition:
+    border-color 120ms ease,
+    background-color 120ms ease,
+    color 120ms ease;
+}
+
+.rvp__mute:hover,
+.rvp__action:hover {
+  border-color: var(--rvp-accent);
+}
+
+.rvp__mute:focus-visible,
+.rvp__action:focus-visible {
+  outline: 2px solid var(--rvp-accent);
+  outline-offset: 1px;
+}
+
+/* Muted is the state that needs the affordance, so that is the state that
+   gets the accent. Once sound is on the control recedes. */
+.rvp__mute.is-muted {
+  border-color: var(--rvp-accent);
+  color: var(--rvp-accent);
+  background: color-mix(in srgb, var(--rvp-accent) 12%, transparent);
+}
+
+.rvp__mute-icon {
+  display: inline-flex;
+  align-items: center;
+}
+
+.rvp__action {
+  color: var(--rvp-muted);
+}
+
+/* -------------------------------------------------------------- message */
+
+.rvp__message {
+  margin: 0;
+  padding: 3px 6px;
+  border-left: 2px solid var(--rvp-muted);
+  border-radius: 0 3px 3px 0;
+  background: rgba(255, 255, 255, 0.035);
+  color: var(--rvp-muted);
+  font-size: 10px;
+  overflow-wrap: anywhere;
+}
+
+.rvp__message[data-severity='warn'] {
+  border-left-color: var(--rvp-warn);
+  color: var(--rvp-warn);
+}
+
+.rvp__message[data-severity='error'] {
+  border-left-color: var(--rvp-bad);
+  color: var(--rvp-bad);
+}
+
+.rvp__message[hidden] {
+  display: none;
+}
+
+/* ------------------------------------------------------------ responsive */
+
+/* Narrow nodes: the numbers are the first thing to go, then the button text.
+   Container queries handle the common case; the JS-set classes are the
+   fallback for hosts where the widget is not a containment root. */
+
+@container (max-width: 230px) {
+  .rvp__meta {
+    display: none;
+  }
+}
+
+@container (max-width: 160px) {
+  .rvp__mute-text {
+    display: none;
+  }
+
+  .rvp__mute {
+    padding: 0 5px;
+  }
+}
+
+.rvp--narrow .rvp__meta {
+  display: none;
+}
+
+.rvp--tight .rvp__mute-text {
+  display: none;
+}
+
+.rvp--tight .rvp__mute {
+  padding: 0 5px;
+}
+
+/* --------------------------------------------------------------- motion */
+
+@media (prefers-reduced-motion: reduce) {
+  .rvp__spinner,
+  .rvp[data-tone='live'] .rvp__dot {
+    animation: none;
+  }
+
+  .rvp__video {
+    transition: none;
+  }
+}
+
+/* --------------------------------------------------------- forced colors */
+
+@media (forced-colors: active) {
+  .rvp__stage,
+  .rvp__mute,
+  .rvp__action {
+    border-color: CanvasText;
+  }
+
+  .rvp__dot {
+    background: CanvasText;
+  }
+}

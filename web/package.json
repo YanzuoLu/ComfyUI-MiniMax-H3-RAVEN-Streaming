@@ -1,0 +1,6 @@
+{
+  "name": "comfyui-raven-streaming-preview-web",
+  "private": true,
+  "type": "module",
+  "description": "Declares the files in this directory as ES modules. Browsers already load them as modules (ComfyUI serves /extensions with type=module); this file is what lets Node run web/tests/run_checks.mjs against the same sources. Nothing is installed or built from it - ComfyUI serves these files statically."
+}
