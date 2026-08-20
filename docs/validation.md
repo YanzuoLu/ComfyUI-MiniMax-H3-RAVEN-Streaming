@@ -342,7 +342,7 @@ entry exists. The checks below validate the package without publishing it.
 | `comfy node validate` | **"All validation checks passed successfully"** (configuration + security checks) | `comfy-cli 1.16.0` installed into an isolated, project-local `.cache/registry-venv`, run as `.cache/registry-venv/bin/comfy --json node validate` |
 | Upstream's own parser | **passes** | the real `comfy_config.config_parser.extract_node_configuration('.')` from the pinned ComfyUI checkout — not a re-implementation |
 | Parsed metadata | `publisher_id = yanzuolu`, `supported_comfyui_version = >=0.30.0`, `supported_os = ['OS Independent']`, `supported_accelerators = ['GPU :: NVIDIA CUDA']`, **`web = None`** | same call |
-| `comfy node pack` | **passed**: 44 files, 875 162 uncompressed bytes; ZIP SHA256 `bf7e8f10662c0294ebcd7f1f8a18de8b07ce8d0c1675f3f52905d8af548c15b3` | packed from the public-source worktree, then moved to `.cache/registry-pack/comfyui-minimax-h3-raven-streaming-0.1.0.zip` |
+| `comfy node pack` | **passed**: 44 files, 875 583 uncompressed bytes; ZIP SHA256 `e6217a0a25c6ecdc2dec18043f691e2789343f6aa9245839bf7c80c316215f0c` | packed from public `main` after the live ComfyUI entrypoint fix, then moved to `.cache/registry-pack/comfyui-minimax-h3-raven-streaming-0.1.0.zip` |
 | Archive contents | required runtime, `web/`, workflows, README/LICENSE/NOTICE/metadata present; **no** `tests/`, `tools/`, `docs/`, `.cache/`, model or IO trees | `unzip -Z1` allow/exclusion audit; full listing in `.cache/final_pack_listing.txt` |
 
 `web = None` is the intended value, not an omission: `WEB_DIRECTORY = "./web"`
