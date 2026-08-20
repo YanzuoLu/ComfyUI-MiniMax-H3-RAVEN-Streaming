@@ -342,18 +342,17 @@ that the package **metadata** is the shape the Comfy Registry expects.
 | `comfy node validate` | **"All validation checks passed successfully"** (configuration + security checks) | `comfy-cli 1.16.0` installed into an isolated, project-local `.cache/registry-venv`, run as `.cache/registry-venv/bin/comfy --json node validate` |
 | Upstream's own parser | **passes** | the real `comfy_config.config_parser.extract_node_configuration('.')` from the pinned ComfyUI checkout — not a re-implementation |
 | Parsed metadata | `publisher_id = yanzuolu`, `supported_comfyui_version = >=0.30.0`, `supported_os = ['OS Independent']`, `supported_accelerators = ['GPU :: NVIDIA CUDA']`, **`web = None`** | same call |
+| `comfy node pack` | **passed**: 44 files, 876 550 uncompressed bytes; ZIP SHA256 `ba72ece9f89259b83ff6913303aa4e666cceba1804d3bbe189396cd936c12fbe` | packed from the local git history, then moved to `.cache/registry-pack/comfyui-minimax-h3-raven-streaming-0.1.0.zip` |
+| Archive contents | required runtime, `web/`, workflows, README/LICENSE/NOTICE/metadata present; **no** `tests/`, `tools/`, `docs/`, `.cache/`, model or IO trees | `unzip -Z1` allow/exclusion audit; full listing in `.cache/final_pack_listing.txt` |
 
 `web = None` is the intended value, not an omission: `WEB_DIRECTORY = "./web"`
 lives in the repository root `__init__.py`, and setting `[tool.comfy] web` as
 well would make upstream register the folder twice under two keys and load every
 file in it twice (`web/PROTOCOL.md` §6.1).
 
-The venv is deliberately inside the gitignored `.cache/`, so the packaging tool
-never contaminates the environment the tests and probes run in.
-
-**Still outstanding:** `comfy node pack` — the archive dry run that would show
-what `.comfyignore` actually excludes — has **not** been run. It needs a git
-history to pack, and this tree has no commits yet. That is an M5 item.
+The venv and packed ZIP are deliberately inside gitignored `.cache/`, so neither
+contaminates the runtime environment or git history. `pack` is a local dry run:
+no publish, repository, tag, release or Registry entry was created.
 
 ## Optional paths, explicitly unverified
 
