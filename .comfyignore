@@ -1,0 +1,37 @@
+# Files excluded from the Comfy Registry package.
+# gitignore syntax. Keep the runtime package (raven_streaming/) and web/ assets.
+
+# Development-only trees
+tests/
+docs/
+tools/
+scripts/
+examples/
+.github/
+
+# Caches, upstream checkouts and build artifacts
+.cache/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.coverage
+htmlcov/
+dist/
+build/
+*.egg-info/
+
+# Local model / IO trees that must never be published
+models/
+output/
+temp/
+input/
+
+# Editor and OS noise
+.DS_Store
+.idea/
+.vscode/
+
+# Docs that are not the registry README
+COMPATIBILITY.md

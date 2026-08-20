@@ -1,0 +1,117 @@
+[project]
+name = "comfyui-minimax-h3-raven-streaming"
+description = "Streaming text-to-video-and-audio (T2VA) nodes for MiniMax H3: a RAVEN model loader and a chunk-major RAVEN streaming sampler, built on ComfyUI's official H3 support."
+version = "0.1.0"
+license = { file = "LICENSE" }
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+  # fMP4 muxing for the streaming preview. ComfyUI itself pins av>=16.0.0;
+  # measured on 17.1.0 (probe box) and 18.1.0 (local).
+  "av>=16.0.0",
+  # NOT declared: `comfyui-frontend-package`. comfy_config derives the Registry's
+  # supported_comfyui_frontend_version from a dependency line starting with that
+  # name, but declaring it here would also make pip install/upgrade the frontend
+  # of whatever ComfyUI this pack is dropped into. The preview degrades on its
+  # own when the frontend cannot carry it (web/PROTOCOL.md), so the pinned
+  # frontend is recorded in COMPATIBILITY.md rather than enforced by pip.
+]
+classifiers = [
+  "Development Status :: 3 - Alpha",
+  "License :: OSI Approved :: MIT License",
+  "Programming Language :: Python :: 3",
+  # Read by comfy_config.config_parser -> supported_os / supported_accelerators.
+  # Only the strings in its allow-lists may appear here; anything else makes the
+  # parser drop the whole list.
+  "Operating System :: OS Independent",
+  "Environment :: GPU :: NVIDIA CUDA",
+]
+
+# `[project.urls]` is deliberately absent.
+#
+# This project has no public repository: there is no remote, and no GitHub
+# project of that name exists. Every URL that used to be here -- Repository,
+# Documentation, BugTracker -- pointed at that non-existent project, and both
+# pip metadata and the Registry render such entries as clickable links, so the
+# only thing they could do is send someone to a 404. Recording a URL that does
+# not resolve is worse than recording none: the reader cannot tell "not
+# published yet" from "link is broken", and future metadata cannot un-click a
+# click that already happened.
+#
+# comfy_config.config_parser (upstream, pinned commit) defaults
+# ProjectConfig.urls to an all-empty URLs model, so leaving the table out is a
+# valid configuration, not a missing one. When a real repository exists, add
+# the table back with the URL that actually resolves.
+
+[tool.comfy]
+PublisherId = "yanzuolu"
+DisplayName = "MiniMax H3 RAVEN Streaming"
+# `Repository` is deliberately absent here too, for the same reason -- and it
+# was never read anyway: comfy_config.types.ComfyConfig at the pinned commit
+# has no Repository/repository field (PublisherId, DisplayName, Icon, Models,
+# includes, web, banner_url), and pydantic ignores the extra key. The Registry
+# takes the repository from [project.urls].Repository, which is exactly the
+# link this project cannot honestly provide yet.
+# Target minimum, NOT a verified floor: 0.30 has never been run. The audited and
+# measured baseline is ComfyUI 0.33.0 (commit
+# c67885b14556cf3e4e061862925282d403d09862) with comfyui-frontend-package 1.49.6.
+# The feature probe in COMPATIBILITY.md decides at runtime, not this string.
+requires-comfyui = ">=0.30.0"
+# Nothing extra is pulled into the published archive; .comfyignore decides what
+# is left out (tests/, tools/, docs/, .cache/, ...).
+includes = []
+
+# `web` is deliberately NOT set here.
+#
+# Upstream honours both `[tool.comfy] web` and the module-level WEB_DIRECTORY
+# (nodes.py:2270-2289 at the pinned commit) and registers each under a *different*
+# key -- the project name for the first, the module name for the second. Setting
+# both would serve web/ twice, so every file in it, including the preview
+# extension, would load twice in the browser.
+#
+# This pack registers the folder once, from the repository root __init__.py:
+#     WEB_DIRECTORY = "./web"
+# alongside NODE_CLASS_MAPPINGS / NODE_DISPLAY_NAME_MAPPINGS (V1 registration;
+# there is no V3 comfy_entrypoint on purpose). See web/PROTOCOL.md section 6.
+#
+# Nodes declared by those mappings, for reference:
+#   RAVENModelLoader      -> "RAVEN Model Loader"
+#   RAVENStreamingSampler -> "RAVEN Streaming Sampler"
+
+# ---------------------------------------------------------------------------
+# Registry publishing: manual only, and not done yet.
+#
+# There is no publish workflow in this repository by design. When it happens it
+# is a person running comfy-cli under publisher id `yanzuolu`.
+#
+# Dry run (validates this file and what .comfyignore would ship, without
+# creating a remote, a tag or a release):
+#
+#   comfy node pack           # build the archive locally and inspect it
+#   comfy node validate       # if the installed CLI exposes it
+#
+# Checks actually run against this file, with recorded results:
+#
+#   git ls-files --others --exclude-from=.comfyignore --exclude-standard
+#     -- what the archive would contain; 44 entries, runtime package + web/ +
+#        workflows/ + README/LICENSE/NOTICE, no tests/tools/docs/.cache
+#
+#   PYTHONPATH=.cache/upstream/ComfyUI python -c \
+#     "from comfy_config import config_parser; \
+#      print(config_parser.extract_node_configuration('.'))"
+#     -- the real upstream parser at the pinned commit c67885b, run with
+#        pydantic-settings available. Passed: name/version read,
+#        supported_os ['OS Independent'], supported_accelerators
+#        ['GPU :: NVIDIA CUDA'], supported_comfyui_version '>=0.30.0',
+#        frontend version intentionally empty, and urls all-empty -- the
+#        default when [project.urls] is absent, i.e. a valid configuration.
+#
+#   comfy node validate            (comfy-cli 1.16.0, .cache/registry-venv)
+#     -- "All validation checks passed successfully", exit 0, with no
+#        [project.urls] and no [tool.comfy] Repository. Neither is required.
+#        This command talks to nothing remote; `comfy node pack` and
+#        `comfy node publish` were NOT run.
+#
+# `comfy node publish` is the only command that creates anything remote. It is
+# not part of any check described here and has not been run.
+# ---------------------------------------------------------------------------
