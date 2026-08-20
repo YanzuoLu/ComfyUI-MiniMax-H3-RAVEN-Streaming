@@ -4,7 +4,7 @@ Streaming **text-to-video-and-audio (T2VA)** custom nodes for **MiniMax H3**,
 built on top of ComfyUI's *official* H3 implementation and a **mandatory RAVEN
 LoRA**.
 
-> **Status: implemented, locally validated, not published.** The nodes, the
+> **Status: implemented, locally validated, source published.** The nodes, the
 > chunk-major sampler, the streaming preview and the workflows in `workflows/`
 > run end to end on real weights: 1376x768 / 192 frames inside a simulated
 > 24 GiB VRAM envelope, the 362-frame maximum, the real Qwen3-VL text lane, a
@@ -13,34 +13,33 @@ LoRA**.
 > A delivered-chunk cancellation followed by three normal runs also leaves no
 > buffered media and produces bitwise-identical outputs with zero CUDA plateau
 > growth. Every measurement is listed in [`docs/validation.md`](docs/validation.md).
-> There is no Comfy Registry release and no public git remote.
+> The source repository is public; there is no Comfy Registry release yet.
 
 - Display name: **MiniMax H3 RAVEN Streaming**
 - Package name: `comfyui-minimax-h3-raven-streaming`
 - Runtime Python package: `raven_streaming/`
 - Version: `0.1.0`
 - License: MIT (see `LICENSE`) — **model weights are licensed separately, see below**
-- Repository: **not published.** There is no public clone URL yet; this tree is
-  local only.
+- Repository: <https://github.com/YanzuoLu/ComfyUI-MiniMax-H3-RAVEN-Streaming>
 
 ---
 
 ## Installation
 
-Not published to the Comfy Registry, and **not available from a public git
-remote** — do not try to `git clone` it. Install by copying this directory into
-ComfyUI's `custom_nodes`:
+The source is public but the package is not yet published to the Comfy Registry.
+Install it directly into ComfyUI's `custom_nodes` directory:
 
 ```bash
-cp -R /path/to/ComfyUI-MiniMax-H3-RAVEN-Streaming ComfyUI/custom_nodes/
+cd ComfyUI/custom_nodes
+git clone https://github.com/YanzuoLu/ComfyUI-MiniMax-H3-RAVEN-Streaming.git
 ```
 
-(or symlink it, if you want to keep editing in place:
-`ln -s /path/to/ComfyUI-MiniMax-H3-RAVEN-Streaming ComfyUI/custom_nodes/`).
+To update later:
 
-When there *is* a release — a Comfy Registry entry, or a published repository —
-this section becomes the one-line install for it. Until then the copy above is
-the only supported path.
+```bash
+cd ComfyUI/custom_nodes/ComfyUI-MiniMax-H3-RAVEN-Streaming
+git pull --ff-only
+```
 
 Then restart ComfyUI. The nodes register through the repository root
 `__init__.py` (V1 mappings plus `WEB_DIRECTORY`), so no extra step is needed to
@@ -453,22 +452,13 @@ without FlashAttention runs without any configuration. `FLASH_ATTN_3_AVAILABLE=0
 
 ## Documentation
 
-- [`docs/validation.md`](docs/validation.md) — what was measured, with the
-  numbers and the artifacts. **Read this before believing anything else.**
-- [`docs/requirements.md`](docs/requirements.md) — the confirmed requirements
-  contract.
-- [`docs/architecture.md`](docs/architecture.md) — module layout, the
-  chunk-major loop, the KV cache, the two collectors, the preview lane, the
-  memory budget.
-- [`COMPATIBILITY.md`](COMPATIBILITY.md) — pinned baseline, the feature probe,
-  and the known risks.
-- [`web/PROTOCOL.md`](web/PROTOCOL.md) — the preview wire protocol (v1).
-- [`NOTICE`](NOTICE) — third-party attribution.
+- [`docs/validation.md`](https://github.com/YanzuoLu/ComfyUI-MiniMax-H3-RAVEN-Streaming/blob/main/docs/validation.md) — what was measured, with the numbers and artifacts. **Read this before believing anything else.**
+- [`docs/requirements.md`](https://github.com/YanzuoLu/ComfyUI-MiniMax-H3-RAVEN-Streaming/blob/main/docs/requirements.md) — the confirmed requirements contract.
+- [`docs/architecture.md`](https://github.com/YanzuoLu/ComfyUI-MiniMax-H3-RAVEN-Streaming/blob/main/docs/architecture.md) — module layout, sampler, KV cache, collectors and memory design.
+- [`COMPATIBILITY.md`](https://github.com/YanzuoLu/ComfyUI-MiniMax-H3-RAVEN-Streaming/blob/main/COMPATIBILITY.md) — pinned baseline, feature probes and known risks.
+- [`web/PROTOCOL.md`](https://github.com/YanzuoLu/ComfyUI-MiniMax-H3-RAVEN-Streaming/blob/main/web/PROTOCOL.md) — preview wire protocol v1.
+- [`NOTICE`](https://github.com/YanzuoLu/ComfyUI-MiniMax-H3-RAVEN-Streaming/blob/main/NOTICE) — third-party attribution.
 
-All of these links are **repository-relative**, because there is no published
-repository for an absolute link to point at. Note that `docs/` and
-`COMPATIBILITY.md` are excluded from the Registry archive by `.comfyignore`, so
-if this package is ever published these four links stop resolving from the
-packaged README and have to be re-pointed at the repository — that is a release
-step, tracked as M5. `workflows/`, `web/`, `LICENSE` and `NOTICE` ship with the
-package.
+The documentation links are absolute so they remain valid when the Registry
+archive omits `docs/` and `COMPATIBILITY.md` via `.comfyignore`. `workflows/`,
+`web/`, `LICENSE` and `NOTICE` ship with the package.

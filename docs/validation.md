@@ -334,15 +334,15 @@ can be redone term by term from the artifact.
 
 ## Packaging — Registry dry run
 
-Nothing is published, and nothing here publishes anything. What was checked is
-that the package **metadata** is the shape the Comfy Registry expects.
+The source repository is public, but no tag, GitHub Release or Comfy Registry
+entry exists. The checks below validate the package without publishing it.
 
 | Check | Result | How |
 |---|---|---|
 | `comfy node validate` | **"All validation checks passed successfully"** (configuration + security checks) | `comfy-cli 1.16.0` installed into an isolated, project-local `.cache/registry-venv`, run as `.cache/registry-venv/bin/comfy --json node validate` |
 | Upstream's own parser | **passes** | the real `comfy_config.config_parser.extract_node_configuration('.')` from the pinned ComfyUI checkout — not a re-implementation |
 | Parsed metadata | `publisher_id = yanzuolu`, `supported_comfyui_version = >=0.30.0`, `supported_os = ['OS Independent']`, `supported_accelerators = ['GPU :: NVIDIA CUDA']`, **`web = None`** | same call |
-| `comfy node pack` | **passed**: 44 files, 876 550 uncompressed bytes; ZIP SHA256 `ba72ece9f89259b83ff6913303aa4e666cceba1804d3bbe189396cd936c12fbe` | packed from the local git history, then moved to `.cache/registry-pack/comfyui-minimax-h3-raven-streaming-0.1.0.zip` |
+| `comfy node pack` | **passed**: 44 files, 875 162 uncompressed bytes; ZIP SHA256 `bf7e8f10662c0294ebcd7f1f8a18de8b07ce8d0c1675f3f52905d8af548c15b3` | packed from the public-source worktree, then moved to `.cache/registry-pack/comfyui-minimax-h3-raven-streaming-0.1.0.zip` |
 | Archive contents | required runtime, `web/`, workflows, README/LICENSE/NOTICE/metadata present; **no** `tests/`, `tools/`, `docs/`, `.cache/`, model or IO trees | `unzip -Z1` allow/exclusion audit; full listing in `.cache/final_pack_listing.txt` |
 
 `web = None` is the intended value, not an omission: `WEB_DIRECTORY = "./web"`
@@ -352,7 +352,7 @@ file in it twice (`web/PROTOCOL.md` §6.1).
 
 The venv and packed ZIP are deliberately inside gitignored `.cache/`, so neither
 contaminates the runtime environment or git history. `pack` is a local dry run:
-no publish, repository, tag, release or Registry entry was created.
+it creates no tag, release or Registry entry.
 
 ## Optional paths, explicitly unverified
 

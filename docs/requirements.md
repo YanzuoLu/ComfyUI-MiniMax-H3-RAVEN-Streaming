@@ -15,7 +15,7 @@ here.
 | Runtime Python package | `raven_streaming` |
 | Version | `0.1.0` |
 | License | MIT (code only) |
-| Public repository | **None.** Local checkout only — no remote is configured and no GitHub project exists, so no repository URL is published anywhere in this package. |
+| Public repository | <https://github.com/YanzuoLu/ComfyUI-MiniMax-H3-RAVEN-Streaming> |
 | Comfy Registry PublisherId | `yanzuolu` |
 | Publishing | **Manual only.** No publish GitHub Action, no CI publishing. |
 

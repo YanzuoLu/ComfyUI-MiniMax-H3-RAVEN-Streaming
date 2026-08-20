@@ -27,31 +27,14 @@ classifiers = [
   "Environment :: GPU :: NVIDIA CUDA",
 ]
 
-# `[project.urls]` is deliberately absent.
-#
-# This project has no public repository: there is no remote, and no GitHub
-# project of that name exists. Every URL that used to be here -- Repository,
-# Documentation, BugTracker -- pointed at that non-existent project, and both
-# pip metadata and the Registry render such entries as clickable links, so the
-# only thing they could do is send someone to a 404. Recording a URL that does
-# not resolve is worse than recording none: the reader cannot tell "not
-# published yet" from "link is broken", and future metadata cannot un-click a
-# click that already happened.
-#
-# comfy_config.config_parser (upstream, pinned commit) defaults
-# ProjectConfig.urls to an all-empty URLs model, so leaving the table out is a
-# valid configuration, not a missing one. When a real repository exists, add
-# the table back with the URL that actually resolves.
+[project.urls]
+Repository = "https://github.com/YanzuoLu/ComfyUI-MiniMax-H3-RAVEN-Streaming"
+Documentation = "https://github.com/YanzuoLu/ComfyUI-MiniMax-H3-RAVEN-Streaming#readme"
+Issues = "https://github.com/YanzuoLu/ComfyUI-MiniMax-H3-RAVEN-Streaming/issues"
 
 [tool.comfy]
 PublisherId = "yanzuolu"
 DisplayName = "MiniMax H3 RAVEN Streaming"
-# `Repository` is deliberately absent here too, for the same reason -- and it
-# was never read anyway: comfy_config.types.ComfyConfig at the pinned commit
-# has no Repository/repository field (PublisherId, DisplayName, Icon, Models,
-# includes, web, banner_url), and pydantic ignores the extra key. The Registry
-# takes the repository from [project.urls].Repository, which is exactly the
-# link this project cannot honestly provide yet.
 # Target minimum, NOT a verified floor: 0.30 has never been run. The audited and
 # measured baseline is ComfyUI 0.33.0 (commit
 # c67885b14556cf3e4e061862925282d403d09862) with comfyui-frontend-package 1.49.6.
@@ -85,7 +68,7 @@ includes = []
 # is a person running comfy-cli under publisher id `yanzuolu`.
 #
 # Dry run (validates this file and what .comfyignore would ship, without
-# creating a remote, a tag or a release):
+# creating a tag, release or Registry entry):
 #
 #   comfy node pack           # build the archive locally and inspect it
 #   comfy node validate       # if the installed CLI exposes it
@@ -103,15 +86,14 @@ includes = []
 #        pydantic-settings available. Passed: name/version read,
 #        supported_os ['OS Independent'], supported_accelerators
 #        ['GPU :: NVIDIA CUDA'], supported_comfyui_version '>=0.30.0',
-#        frontend version intentionally empty, and urls all-empty -- the
-#        default when [project.urls] is absent, i.e. a valid configuration.
+#        frontend version intentionally empty, with the public Repository,
+#        Documentation and Issues URLs above.
 #
 #   comfy node validate            (comfy-cli 1.16.0, .cache/registry-venv)
-#     -- "All validation checks passed successfully", exit 0, with no
-#        [project.urls] and no [tool.comfy] Repository. Neither is required.
-#        This command talks to nothing remote; `comfy node pack` and
-#        `comfy node publish` were NOT run.
+#     -- "All validation checks passed successfully", exit 0.
 #
-# `comfy node publish` is the only command that creates anything remote. It is
-# not part of any check described here and has not been run.
+#   comfy node pack
+#     -- 44-file local archive; forbidden-content audit passed.
+#
+# `comfy node publish` creates the Registry entry. It has not been run.
 # ---------------------------------------------------------------------------
